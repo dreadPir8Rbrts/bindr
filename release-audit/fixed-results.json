@@ -1,0 +1,144 @@
+[
+  {
+    "engine": "Chrome",
+    "test": "Phone/landscape layout matrix",
+    "status": "PASS",
+    "detail": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 375,
+        "scroll": 375
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "width": 430,
+        "scroll": 430
+      },
+      {
+        "width": 667,
+        "scroll": 667
+      },
+      {
+        "width": 844,
+        "scroll": 844
+      }
+    ],
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Full inventory and 101 frame coverage",
+    "status": "PASS",
+    "detail": {
+      "available": 101,
+      "sold": 169,
+      "framed": 101
+    },
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Search, no results and reset",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Condition selection and clear",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Budget reset clears visible label",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Favorite persists after refresh",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Original photo zoom and browser back",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Compare exact Magikarp copies",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Sold card cannot enter lot",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Lot remove undo and reload note",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Copy confirmation invalidated after note edit",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Clipboard denied fallback",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Instagram handoff without sending",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Price change warns buyer",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Sold reconciliation removes selected card",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Broken photo has readable fallback",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Blocked storage still permits browsing",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Seller signed-out protection",
+    "status": "PASS",
+    "detail": {
+      "errorsVisible": ""
+    },
+    "errors": []
+  }
+]

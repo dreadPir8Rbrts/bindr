@@ -1,0 +1,620 @@
+{
+ "parse": [
+  {
+   "text": "BASIC\nPikachu\nHP 60\nGnaw 10\nThunder Jolt 30\nweakness x2 resistance retreat\nIllus. Atsuko Nishida\n025/198 C\n©2023 Pokémon",
+   "expected": {
+    "name": "Pikachu",
+    "name_candidates": [
+     "Pikachu",
+     "Gnaw",
+     "Thunder Jolt",
+     "weakness x2 resistance retreat",
+     "Illus. Atsuko Nishida",
+     "025/198 C",
+     "©2023 Pokémon"
+    ],
+    "set_number": "025/198",
+    "ocr_num1": "025",
+    "ocr_num2": "198",
+    "hp": 60,
+    "illustrator": "Atsuko Nishida",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "STAGE 1\nEvolves from Charmander\nCharmeleon 90\nHP\nFire Claws 50\nIllus. kawayoo\n005/165\n",
+   "expected": {
+    "name": "Evolves from Charmander",
+    "name_candidates": [
+     "Evolves from Charmander",
+     "Charmeleon",
+     "HP",
+     "Fire Claws",
+     "Illus. kawayoo",
+     "005/165"
+    ],
+    "set_number": "005/165",
+    "ocr_num1": "005",
+    "ocr_num2": "165",
+    "hp": 90,
+    "illustrator": "kawayoo",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Charizard ex\nSTAGE 2 Evolves from Charmeleon\nHP 330\nInfernal Reign\nIllus. PLANETA Mochizuki\n125/197 DR",
+   "expected": {
+    "name": "Charizard ex",
+    "name_candidates": [
+     "Charizard ex",
+     "Evolves from Charmeleon",
+     "Infernal Reign",
+     "Illus. PLANETA Mochizuki",
+     "125/197 DR"
+    ],
+    "set_number": "125/197",
+    "ocr_num1": "125",
+    "ocr_num2": "197",
+    "hp": 330,
+    "illustrator": "PLANETA Mochizuki",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Team Rocket's Zapdos 1204\nBASIC\nlus.Nobuyuki Hobu\n070/182\n",
+   "expected": {
+    "name": "Team Rocket's Zapdos",
+    "name_candidates": [
+     "Team Rocket's Zapdos",
+     "lus.Nobuyuki Hobu",
+     "070/182"
+    ],
+    "set_number": "070/182",
+    "ocr_num1": "070",
+    "ocr_num2": "182",
+    "hp": null,
+    "illustrator": "Nobuyuki Hobu",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Evolves from Charmeleon\nCharizard\n120 HP\nSTAGE 2\nEnergy Burn\nFire Spin 100\nIllus. Mitsuhiro Arita\n4/102\n©1995, 96, 98 Nintendo",
+   "expected": {
+    "name": "Evolves from Charmeleon",
+    "name_candidates": [
+     "Evolves from Charmeleon",
+     "Charizard",
+     "Energy Burn",
+     "Fire Spin",
+     "Illus. Mitsuhiro Arita",
+     "4/102",
+     "©1995, 96, 98 Nintendo"
+    ],
+    "set_number": "4/102",
+    "ocr_num1": "4",
+    "ocr_num2": "102",
+    "hp": 120,
+    "illustrator": "Mitsuhiro Arita",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Dark Machamp 70 HP\nEvolves from Dark Machoke\nIllus. Ken Sugimori\n27/82",
+   "expected": {
+    "name": "Dark Machamp 70 HP",
+    "name_candidates": [
+     "Dark Machamp 70 HP",
+     "Evolves from Dark Machoke",
+     "Illus. Ken Sugimori",
+     "27/82"
+    ],
+    "set_number": "27/82",
+    "ocr_num1": "27",
+    "ocr_num2": "82",
+    "hp": 70,
+    "illustrator": "Ken Sugimori",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Aerodactyl\n60 HP\nPrehistoric Power\nHlus. Kogame\n1/62",
+   "expected": {
+    "name": "Aerodactyl",
+    "name_candidates": [
+     "Aerodactyl",
+     "Prehistoric Power",
+     "Hlus. Kogame",
+     "1/62"
+    ],
+    "set_number": "1/62",
+    "ocr_num1": "1",
+    "ocr_num2": "62",
+    "hp": 60,
+    "illustrator": "Kogame",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Bronzong LV.49\nHP 90\nIllus Hikaru Koike\n19/130",
+   "expected": {
+    "name": "Bronzong",
+    "name_candidates": [
+     "Bronzong",
+     "Illus Hikaru Koike",
+     "19/130"
+    ],
+    "set_number": "19/130",
+    "ocr_num1": "19",
+    "ocr_num2": "130",
+    "hp": 90,
+    "illustrator": "Hikaru Koike",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Aron x.15\nHP 50\n",
+   "expected": {
+    "name": "Aron",
+    "name_candidates": [
+     "Aron"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": 50,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Latios EX\nBASIC\nHP 170\n113/116\n",
+   "expected": {
+    "name": "Latios EX",
+    "name_candidates": [
+     "Latios EX",
+     "113/116"
+    ],
+    "set_number": "113/116",
+    "ocr_num1": "113",
+    "ocr_num2": "116",
+    "hp": 170,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Pikachu VMAX\nVMAX\nHP 310\nTG17/TG30\nIllus. aky CG Works",
+   "expected": {
+    "name": "Pikachu VMAX",
+    "name_candidates": [
+     "Pikachu VMAX",
+     "TG17/TG30",
+     "Illus. aky CG Works"
+    ],
+    "set_number": "TG17/TG30",
+    "ocr_num1": "TG17",
+    "ocr_num2": "TG30",
+    "hp": 310,
+    "illustrator": "aky CG Works",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Mewtwo\nHP 130\n064/SV-P\n",
+   "expected": {
+    "name": "Mewtwo",
+    "name_candidates": [
+     "Mewtwo",
+     "064/SV-P"
+    ],
+    "set_number": "064/SV-P",
+    "ocr_num1": "064",
+    "ocr_num2": "SV-P",
+    "hp": 130,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Pikachu\nNO. 0025 Mouse Pokémon HT 1'4\"\nHP 70\n063/182 AR\nIllus. Naoki Saito",
+   "expected": {
+    "name": "Pikachu",
+    "name_candidates": [
+     "Pikachu",
+     "NO. 0025 Mouse Pokémon HT 1'4\"",
+     "063/182 AR",
+     "Illus. Naoki Saito"
+    ],
+    "set_number": "063/182",
+    "ocr_num1": "063",
+    "ocr_num2": "182",
+    "hp": 70,
+    "illustrator": "Naoki Saito",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "たね\nピカチュウ HP60\nNo.025\nIllus. Mitsuhiro Arita",
+   "expected": {
+    "name": "ピカチュウ",
+    "name_candidates": [
+     "ピカチュウ",
+     "Illus. Mitsuhiro Arita"
+    ],
+    "set_number": "No.025",
+    "ocr_num1": "No.025",
+    "ocr_num2": null,
+    "hp": 60,
+    "illustrator": "Mitsuhiro Arita",
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "Gengar\nNa 094\nHP 80\n",
+   "expected": {
+    "name": "Gengar",
+    "name_candidates": [
+     "Gengar",
+     "Na"
+    ],
+    "set_number": "No.094",
+    "ocr_num1": "No.094",
+    "ocr_num2": null,
+    "hp": 80,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "1進化\nリザード\nHP 90\nヒトカゲから進化\nIllus. kawayoo\n005/165",
+   "expected": {
+    "name": "リザード",
+    "name_candidates": [
+     "リザード",
+     "Illus. kawayoo",
+     "005/165"
+    ],
+    "set_number": "005/165",
+    "ocr_num1": "005",
+    "ocr_num2": "165",
+    "hp": 90,
+    "illustrator": "kawayoo",
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "わるいゲンガー M.3 HP70\n「進化ポケモン」の\nNo.094",
+   "expected": {
+    "name": "わるいゲンガー",
+    "name_candidates": [
+     "わるいゲンガー"
+    ],
+    "set_number": "No.094",
+    "ocr_num1": "No.094",
+    "ocr_num2": null,
+    "hp": 70,
+    "illustrator": null,
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "2進化ポケモン\nリザードン\nHP120\nモンスターカードに重ねて使います。\n",
+   "expected": {
+    "name": "リザードン",
+    "name_candidates": [
+     "リザードン"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": 120,
+    "illustrator": null,
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "スリーパー\nHP90\n",
+   "expected": {
+    "name": "スリーパー",
+    "name_candidates": [
+     "スリーパー"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": 90,
+    "illustrator": null,
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "イマクニ?のドードー\n036\n",
+   "expected": {
+    "name": "イマクニ?のドードー",
+    "name_candidates": [
+     "イマクニ?のドードー"
+    ],
+    "set_number": "036",
+    "ocr_num1": "036",
+    "ocr_num2": null,
+    "hp": null,
+    "illustrator": null,
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "ゲンガー\n弱点\n抵抗力\nにげる\n022/050 R",
+   "expected": {
+    "name": "ゲンガー",
+    "name_candidates": [
+     "ゲンガー",
+     "022/050 R"
+    ],
+    "set_number": "022/050",
+    "ocr_num1": "022",
+    "ocr_num2": "050",
+    "hp": null,
+    "illustrator": null,
+    "language_code": "JA"
+   }
+  },
+  {
+   "text": "",
+   "expected": {
+    "name": null,
+    "name_candidates": [],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": null,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "TRAINER\nProfessor's Research\nIllus. Hideki Ishikawa\n201/198 SR",
+   "expected": {
+    "name": "Professor's Research",
+    "name_candidates": [
+     "Professor's Research",
+     "Illus. Hideki Ishikawa",
+     "201/198 SR"
+    ],
+    "set_number": "201/198",
+    "ocr_num1": "201",
+    "ocr_num2": "198",
+    "hp": null,
+    "illustrator": "Hideki Ishikawa",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "ENERGY\n",
+   "expected": {
+    "name": null,
+    "name_candidates": [],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": null,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "12345\nHP\n",
+   "expected": {
+    "name": "HP",
+    "name_candidates": [
+     "HP"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": null,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "LV.15 HP 50\nPoliwag\n",
+   "expected": {
+    "name": "LV.15",
+    "name_candidates": [
+     "LV.15",
+     "Poliwag"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": 50,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "STAGE Electrode\nHP 80\n",
+   "expected": {
+    "name": "Electrode",
+    "name_candidates": [
+     "Electrode"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": 80,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "BASIC TRAINER\nPotion\n",
+   "expected": {
+    "name": "Potion",
+    "name_candidates": [
+     "Potion"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": null,
+    "illustrator": null,
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Pokémon Center Lady\n060/073\nIllus. kirisAki ©2020 Pokémon",
+   "expected": {
+    "name": "Pokémon Center Lady",
+    "name_candidates": [
+     "Pokémon Center Lady",
+     "060/073",
+     "Illus. kirisAki ©2020 Pokémon"
+    ],
+    "set_number": "060/073",
+    "ocr_num1": "060",
+    "ocr_num2": "073",
+    "hp": null,
+    "illustrator": "kirisAki",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Snorlax\n044/1910\nIllus. Ken Sugimori",
+   "expected": {
+    "name": "Snorlax",
+    "name_candidates": [
+     "Snorlax",
+     "044/1910",
+     "Illus. Ken Sugimori"
+    ],
+    "set_number": "044/1910",
+    "ocr_num1": "044",
+    "ocr_num2": "1910",
+    "hp": null,
+    "illustrator": "Ken Sugimori",
+    "language_code": "EN"
+   }
+  },
+  {
+   "text": "Illus. Kagemaru Himeno ©1995 Nintendo\nVaporeon\nHP 80",
+   "expected": {
+    "name": "Illus. Kagemaru Himeno ©1995 Nintendo",
+    "name_candidates": [
+     "Illus. Kagemaru Himeno ©1995 Nintendo",
+     "Vaporeon"
+    ],
+    "set_number": null,
+    "ocr_num1": null,
+    "ocr_num2": null,
+    "hp": 80,
+    "illustrator": "Kagemaru Himeno",
+    "language_code": "EN"
+   }
+  }
+ ],
+ "fuzz": [
+  {
+   "a": "pikachu",
+   "b": "pikachu",
+   "ratio": 100.0,
+   "token_sort_ratio": 100.0
+  },
+  {
+   "a": "pikachu",
+   "b": "pikachu vmax",
+   "ratio": 73.6842105263158,
+   "token_sort_ratio": 73.6842105263158
+  },
+  {
+   "a": "charizard",
+   "b": "charmeleon",
+   "ratio": 42.10526315789473,
+   "token_sort_ratio": 42.10526315789473
+  },
+  {
+   "a": "latios ex",
+   "b": "latios-ex",
+   "ratio": 88.88888888888889,
+   "token_sort_ratio": 66.66666666666667
+  },
+  {
+   "a": "pikachu basic",
+   "b": "basic pikachu",
+   "ratio": 53.84615384615385,
+   "token_sort_ratio": 100.0
+  },
+  {
+   "a": "",
+   "b": "",
+   "ratio": 100.0,
+   "token_sort_ratio": 100.0
+  },
+  {
+   "a": "a",
+   "b": "",
+   "ratio": 0.0,
+   "token_sort_ratio": 0.0
+  },
+  {
+   "a": "イマクニ?のドードー",
+   "b": "イマクニ? のドードー",
+   "ratio": 95.23809523809523,
+   "token_sort_ratio": 47.61904761904761
+  },
+  {
+   "a": "リザードン",
+   "b": "リザード",
+   "ratio": 88.88888888888889,
+   "token_sort_ratio": 88.88888888888889
+  },
+  {
+   "a": "dark machamp 70 hp",
+   "b": "dark machamp",
+   "ratio": 80.0,
+   "token_sort_ratio": 80.0
+  },
+  {
+   "a": "kagemaru himeno",
+   "b": "kagemaru himeno",
+   "ratio": 100.0,
+   "token_sort_ratio": 100.0
+  },
+  {
+   "a": "hikaru koike",
+   "b": "hikaru koike.",
+   "ratio": 96.0,
+   "token_sort_ratio": 96.0
+  },
+  {
+   "a": "team rocket's zapdos",
+   "b": "rocket's zapdos",
+   "ratio": 85.71428571428572,
+   "token_sort_ratio": 85.71428571428572
+  },
+  {
+   "a": "pokémon center lady",
+   "b": "pokemon center lady",
+   "ratio": 94.73684210526316,
+   "token_sort_ratio": 94.73684210526316
+  },
+  {
+   "a": "mr. mime",
+   "b": "mr mime",
+   "ratio": 93.33333333333333,
+   "token_sort_ratio": 93.33333333333333
+  },
+  {
+   "a": "   ",
+   "b": "x",
+   "ratio": 0.0,
+   "token_sort_ratio": 0.0
+  },
+  {
+   "a": "porygon-z",
+   "b": "porygon z",
+   "ratio": 88.88888888888889,
+   "token_sort_ratio": 88.88888888888889
+  }
+ ]
+}

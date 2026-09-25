@@ -1,0 +1,38 @@
+[
+  {
+    "model": "iPhone SE",
+    "status": "PASS",
+    "checks": [
+      "touch photo navigation",
+      "failed photo retry",
+      "add/review lot",
+      "note focus",
+      "rotation without page overflow",
+      "200% root text without page overflow"
+    ]
+  },
+  {
+    "model": "iPhone 13",
+    "status": "PASS",
+    "checks": [
+      "touch photo navigation",
+      "failed photo retry",
+      "add/review lot",
+      "note focus",
+      "rotation without page overflow",
+      "200% root text without page overflow"
+    ]
+  },
+  {
+    "model": "iPhone 13 Pro Max",
+    "status": "PASS",
+    "checks": [
+      "touch photo navigation",
+      "failed photo retry",
+      "add/review lot",
+      "note focus",
+      "rotation without page overflow",
+      "200% root text without page overflow"
+    ]
+  }
+]

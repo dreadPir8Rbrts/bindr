@@ -1,0 +1,13 @@
+.appearance-panel{padding:18px;margin:22px 0;border:1px solid var(--line);border-radius:12px;background:var(--panel)}.appearance-panel summary{cursor:pointer;font-weight:700}.appearance-fields{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:15px 0}.appearance-panel button,.appearance-panel a{margin:5px 10px 5px 0}.appearance-fields label{flex:1;min-width:180px}.appearance-fields input{width:auto}.seller-pocket .pocket-image-frame{position:relative;aspect-ratio:.72}.seller-pocket .pocket-body{padding:12px}.seller-pocket .seller-pocket-actions{margin-top:8px}.framing-dialog{width:min(800px,calc(100vw - 20px));max-height:90dvh;overflow:auto;background:var(--panel);color:var(--text);border:1px solid var(--line);border-radius:14px;padding:20px}.framing-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}.framing-grid canvas{width:100%;display:block;touch-action:none}.framing-dialog label{display:block;margin:12px 0}.framing-dialog input{width:100%}.framing-dialog button{margin:6px 6px 0 0}@media(max-width:600px){.framing-grid{grid-template-columns:1fr}.framing-grid canvas{max-height:400px;width:auto;max-width:100%}.appearance-fields{display:block}}
+/* Card scanner (step 2) */
+.card-scan{border:1px solid var(--line);border-radius:10px;padding:4px 12px 10px;margin:10px 0}
+.card-scan button.upload-picker{font:inherit;font-size:16px;font-weight:650}
+.card-scan button.upload-picker:disabled{opacity:.5;cursor:not-allowed}
+.scan-heading{margin:10px 0 4px;font-weight:650}
+.scan-offer{display:flex;align-items:center;gap:12px;padding:8px 0;border-top:1px solid var(--line)}
+.scan-offer img,.scan-offer-blank{flex:none;width:60px;height:84px;border-radius:4px;object-fit:cover;background:var(--panel)}
+.scan-offer div{flex:1;min-width:0}
+.scan-offer strong{display:block;overflow-wrap:anywhere}
+.scan-offer span{display:block;font-size:12px;color:var(--muted);overflow-wrap:anywhere}
+.scan-offer button{flex:none;min-height:44px}
+@media (max-width:420px){.scan-offer{flex-wrap:wrap}.scan-offer button{width:100%}}

@@ -1,0 +1,152 @@
+[
+  {
+    "engine": "Chrome",
+    "test": "Phone/landscape layout matrix",
+    "status": "PASS",
+    "detail": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 375,
+        "scroll": 375
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "width": 430,
+        "scroll": 430
+      },
+      {
+        "width": 667,
+        "scroll": 667
+      },
+      {
+        "width": 844,
+        "scroll": 844
+      }
+    ],
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Full inventory and 101 frame coverage",
+    "status": "PASS",
+    "detail": {
+      "available": 101,
+      "sold": 169,
+      "framed": 101
+    },
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Search, no results and reset",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Condition selection and clear",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Budget reset clears visible label",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Favorite persists after refresh",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Original photo zoom and browser back",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Compare exact Magikarp copies",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Sold card cannot enter lot",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Lot remove undo and reload note",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Copy confirmation invalidated after note edit",
+    "status": "FAIL",
+    "error": "Stale Copied confirmation remains after message changed",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Clipboard denied fallback",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Instagram handoff without sending",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Price change warns buyer",
+    "status": "FAIL",
+    "error": "Subtotal changes without an explicit price-change notice",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Sold reconciliation removes selected card",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Broken photo has readable fallback",
+    "status": "FAIL",
+    "error": "No explicit failed-image message",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Blocked storage still permits browsing",
+    "status": "PASS",
+    "errors": []
+  },
+  {
+    "engine": "Chrome",
+    "test": "Seller signed-out protection",
+    "status": "PASS",
+    "detail": {
+      "errorsVisible": ""
+    },
+    "errors": []
+  },
+  {
+    "engine": "WebKit",
+    "status": "UNAVAILABLE",
+    "error": "browserType.launch: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /tmp/bindr-audit-browsers/webkit_mac14_arm64_special-2251/pw_run.sh --inspector-pipe --headless --no-startup-window\n<launched> pid=66087\n[pid=66087][err] /tmp/bindr-audit-browsers/webkit_mac14_arm64_special-2251/pw_run.sh: line 7: 66097 Bus error: 10           DYLD_FRAMEWORK_PATH=\"$DYLIB_PATH\" DYLD_LIBRARY_PATH=\"$DYLIB_PATH\" \"$PLAYWRIGHT\" \"$@\"\nCall log:\n\u001b[2m  - <launching> /tmp/bindr-audit-browsers/webkit_mac14_arm64_special-2251/pw_run.sh --inspector-pipe --headless --no-startup-window\u001b[22m\n\u001b[2m  - <launched> pid=66087\u001b[22m\n\u001b[2m  - [pid=66087][err] /tmp/bindr-audit-browsers/webkit_mac14_arm64_special-2251/pw_run.sh: line 7: 66097 Bus error: 10           DYLD_FRAMEWORK_PATH=\"$DYLIB_PATH\" DYLD_LIBRARY_PATH=\"$DYLIB_PATH\" \"$PLAYWRIGHT\" \"$@\"\u001b[22m\n\u001b[2m  - [pid=66087] <gracefully close start>\u001b[22m\n\u001b[2m  - [pid=66087] <kill>\u001b[22m\n\u001b[2m  - [pid=66087] <will force kill>\u001b[22m\n\u001b[2m  - [pid=66087] exception while trying to kill process: Error: kill ESRCH\u001b[22m\n\u001b[2m  - [pid=66087] <process did exit: exitCode=138, signal=null>\u001b[22m\n\u001b[2m  - [pid=66087] starting temporary directories cleanup\u001b[22m\n\u001b[2m  - [pid=66087] finished temporary directories cleanup\u001b[22m\n\u001b[2m  - [pid=66087] <gracefully close end>\u001b[22m\n"
+  }
+]

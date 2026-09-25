@@ -1,0 +1,13 @@
+'use strict';
+let savedAppearance=null;
+const appearancePanel=document.createElement('details');appearancePanel.className='appearance-panel';
+appearancePanel.innerHTML=`<summary>Customize your binder</summary><p>Choose the cover and page style customers see.</p><div class="appearance-fields"><label>Cover color<select id="appearanceColor">${binderColors.map(c=>`<option value="${c}">${c==='retro'?'1999 primary':c[0].toUpperCase()+c.slice(1)}</option>`).join('')}</select></label><label>Page style<select id="appearanceStyle"><option value="modern">Modern</option><option value="classic">Old school</option><option value="soft">Soft studio</option></select></label><label><input type="checkbox" id="appearanceRings"> Three-ring spine</label></div><button type="button" id="appearanceSave">Save appearance</button><button type="button" id="appearanceUndo">Reset changes</button><a href="/" target="_blank" rel="noopener">Open customer catalog ↗</a><p id="appearanceStatus" role="status"></p>`;
+sellerEl('onlineSellerMain').prepend(appearancePanel);
+const readAppearance=()=>({color:sellerEl('appearanceColor').value,style:sellerEl('appearanceStyle').value,rings:sellerEl('appearanceRings').checked});
+function fillAppearance(a){savedAppearance=a;sellerEl('appearanceColor').value=a.color;sellerEl('appearanceStyle').value=a.style;sellerEl('appearanceRings').checked=a.rings;applyBinderAppearance(a);}
+async function loadAppearance(){try{fillAppearance(await sellerAPI('appearance'));}catch(e){sellerEl('appearanceStatus').textContent=e.message;}}
+appearancePanel.addEventListener('toggle',()=>{if(appearancePanel.open&&!savedAppearance)loadAppearance();});
+appearancePanel.addEventListener('change',()=>{applyBinderAppearance(readAppearance());sellerEl('appearanceStatus').textContent='Previewing changes. Save to update the customer catalog.';});
+sellerEl('appearanceUndo').onclick=()=>{if(savedAppearance)fillAppearance(savedAppearance);sellerEl('appearanceStatus').textContent='Changes reset.';};
+sellerEl('appearanceSave').onclick=async()=>{if(!savedAppearance)return;const b=sellerEl('appearanceSave');b.disabled=true;try{fillAppearance(await sellerAPI('appearance',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...readAppearance(),revision:savedAppearance.revision})}));sellerEl('appearanceStatus').textContent='Saved. Your customer catalog now uses this style.';}catch(e){sellerEl('appearanceStatus').textContent=e.message;}finally{b.disabled=false;}};
+fetch('/.netlify/functions/binder-api?resource=appearance').then(r=>r.ok?r.json():null).then(a=>{if(a)fillAppearance(a);}).catch(()=>{});
