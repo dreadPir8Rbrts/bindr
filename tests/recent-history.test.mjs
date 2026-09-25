@@ -11,7 +11,7 @@ test('clearing history focuses non-editable results instead of opening search',(
   return nodes.get(id);
  }};
  vm.createContext(context);
- const handler=readFileSync('app.js','utf8').split('\n').find(line=>line.startsWith("$('clearRecent').onclick="));
+ const handler=readFileSync('frontend/app.js','utf8').split('\n').find(line=>line.startsWith("$('clearRecent').onclick="));
  vm.runInContext(handler,context);
  nodes.get('clearRecent').onclick();
  assert.equal(context.recent.length,0);

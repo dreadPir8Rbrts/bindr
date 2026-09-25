@@ -1,5 +1,5 @@
 'use strict';
-// Seller card scanner: sends a small JPEG of the card to binder-api?resource=scan
+// Seller card scanner: sends a small JPEG of the card to the scan endpoint
 // (Google Vision OCR + catalog match) and offers the matched card's name and set.
 const SCAN_EDGE=800,SCAN_QUALITY=0.7;
 let scanBusy=false,scanOffers=[];

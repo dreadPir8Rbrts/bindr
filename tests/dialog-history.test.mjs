@@ -7,7 +7,7 @@ function harness(deferBack=false){
  const listeners={},states=[{page:true}];let index=0,pendingBack=false;
  const pop=()=>{if(!index)return;win.history.state=states[--index];listeners.popstate({state:win.history.state});};
  const win={location:{href:'https://binder.test/#card=c1'},history:{state:states[0],pushState(state){states.splice(++index);states[index]=state;this.state=state;},replaceState(state){states[index]=state;this.state=state;},back(){if(deferBack)pendingBack=true;else pop();},forward(){if(index===states.length-1)return;this.state=states[++index];listeners.popstate({state:this.state});}},addEventListener(type,fn){listeners[type]=fn;}};
- const closed=[];const context={globalThis:{}};vm.createContext(context);vm.runInContext(readFileSync('dialog-history.js','utf8'),context);
+ const closed=[];const context={globalThis:{}};vm.createContext(context);vm.runInContext(readFileSync('frontend/dialog-history.js','utf8'),context);
  const controller=context.globalThis.createDialogHistory(win,dialog=>{dialog.open=false;closed.push(dialog.name);controller.closed(dialog);});
  const dialog=name=>({name,open:true});
  return{win,states,closed,controller,dialog,index:()=>index,flush(){if(pendingBack){pendingBack=false;pop();}}};

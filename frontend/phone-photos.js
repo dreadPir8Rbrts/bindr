@@ -1,13 +1,23 @@
 'use strict';
 // One queue belongs to the open listing. Successful uploads are never retried.
 let sellerUploadQueue=[],sellerUploading=false,uploadSerial=0;
-function uploadPhotoRequest(url,options){return new Promise((resolve,reject)=>{
- const xhr=new XMLHttpRequest();xhr.open('POST',url);xhr.withCredentials=true;xhr.timeout=90000;
- xhr.setRequestHeader('Content-Type',options.body.type);
- xhr.upload.onprogress=e=>{if(e.lengthComputable)options.onUploadProgress(Math.min(99,Math.round(e.loaded/e.total*100)));};
- xhr.onload=()=>{if(!xhr.status){reject(Error('Upload connection lost. Retry this photo.'));return;}resolve(new Response(xhr.responseText,{status:xhr.status,headers:{'Content-Type':'application/json'}}));};
- xhr.onerror=()=>reject(Error('Upload connection lost. Retry this photo.'));xhr.ontimeout=()=>reject(Error('Upload timed out. Check your connection and retry this photo.'));xhr.send(options.body);
+// Photos go straight to S3 with presigned POSTs: the API issues the ticket, then confirms
+// the upload before the photo can be used in a listing. Each photo gets a 480px thumbnail
+// for the buyer's binder grid.
+function postToStorage(target,blob,onProgress){return new Promise((resolve,reject)=>{
+ const form=new FormData();for(const [name,value] of Object.entries(target.fields))form.append(name,value);form.append('file',blob);
+ const xhr=new XMLHttpRequest();xhr.open('POST',target.url);xhr.timeout=90000;
+ xhr.upload.onprogress=e=>{if(e.lengthComputable)onProgress(Math.min(99,Math.round(e.loaded/e.total*100)));};
+ xhr.onload=()=>xhr.status>=200&&xhr.status<300?resolve():reject(Error(xhr.status===400||xhr.status===403?'Photo storage refused this file. Retry this photo.':'Upload connection lost. Retry this photo.'));
+ xhr.onerror=()=>reject(Error('Upload connection lost. Retry this photo.'));xhr.ontimeout=()=>reject(Error('Upload timed out. Check your connection and retry this photo.'));xhr.send(form);
 });}
+async function makeThumbnail(blob){const img=await readPhotoImage(blob);try{const size=BinderPhotoPreparation.fitPhoto(img.width,img.height,480),canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size.width,size.height);ctx.drawImage(img.source,0,0,size.width,size.height);return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Could not prepare the photo preview.')),'image/jpeg',0.8));}finally{img.close();}}
+async function uploadSellerPhoto(blob,onProgress){
+ const thumb=await makeThumbnail(blob),json={'Content-Type':'application/json'};
+ const ticket=await sellerAPI('photos/uploads',{method:'POST',headers:json,body:JSON.stringify({contentType:blob.type,bytes:blob.size,thumbBytes:thumb.size})});
+ await postToStorage(ticket.thumbUpload,thumb,()=>{});await postToStorage(ticket.upload,blob,onProgress);onProgress(99);
+ return sellerAPI('photos/confirm',{method:'POST',headers:json,body:JSON.stringify({key:ticket.key})});
+}
 function readPhotoImage(blob){return new Promise((resolve,reject)=>{
  const url=URL.createObjectURL(blob),img=new Image();let finished=false;
  const timer=setTimeout(()=>finish(false),25000);
@@ -55,7 +65,7 @@ async function processSellerUploads(){
     item.state='preparing';item.message='Preparing photo…';renderUploadQueue();
     const prepared=item.prepared||await prepareSellerPhoto(item.file,stage=>{item.message=stage;renderUploadQueue();});item.prepared=prepared;
     item.state='uploading';item.message='Uploading…';item.percent=0;renderUploadQueue();
-    const data=await sellerAPI('photo',{method:'POST',body:prepared.blob,onUploadProgress:percent=>{item.percent=percent;item.message=percent>=99?'Confirming upload…':`Uploading ${percent}%`;renderUploadQueue();}});
+    const data=await uploadSellerPhoto(prepared.blob,percent=>{item.percent=percent;item.message=percent>=99?'Confirming upload…':`Uploading ${percent}%`;renderUploadQueue();});
     if(typeof data.url!=='string')throw Error('Upload was not confirmed. Retry this photo.');
     workingPhotos.push(data.url);workingRoles.push('');try{const frame=await suggestPhotoFrame(prepared.blob);if(frame)workingFrames[data.url]=frame;}catch{}dirty=true;
     item.state='done';item.message=`Added · ${prepared.width} × ${prepared.height}${prepared.original?' · Original file':' · Prepared for upload'}`;item.message+=workingFrames[data.url]?' · Frame suggested; check edges':' · Use Frame photo to adjust';item.file=null;item.prepared=null;renderUploadQueue();if(typeof saveSellerDraft==='function')await saveSellerDraft();

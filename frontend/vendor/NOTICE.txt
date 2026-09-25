@@ -1,0 +1,2 @@
+HEIC conversion: heic-to 1.5.2 (LGPL-3.0), using libheif. Source and license: https://github.com/hoppergee/heic-to/tree/v1.5.2 . Distributed as a separate replaceable module.
+Seller sign-in: @supabase/supabase-js 2.117.2 (MIT), UMD build dist/umd/supabase.js. Source: https://github.com/supabase/supabase-js

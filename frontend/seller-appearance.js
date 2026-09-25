@@ -10,4 +10,4 @@ appearancePanel.addEventListener('toggle',()=>{if(appearancePanel.open&&!savedAp
 appearancePanel.addEventListener('change',()=>{applyBinderAppearance(readAppearance());sellerEl('appearanceStatus').textContent='Previewing changes. Save to update the customer catalog.';});
 sellerEl('appearanceUndo').onclick=()=>{if(savedAppearance)fillAppearance(savedAppearance);sellerEl('appearanceStatus').textContent='Changes reset.';};
 sellerEl('appearanceSave').onclick=async()=>{if(!savedAppearance)return;const b=sellerEl('appearanceSave');b.disabled=true;try{fillAppearance(await sellerAPI('appearance',{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify({...readAppearance(),revision:savedAppearance.revision})}));sellerEl('appearanceStatus').textContent='Saved. Your customer catalog now uses this style.';}catch(e){sellerEl('appearanceStatus').textContent=e.message;}finally{b.disabled=false;}};
-fetch('/.netlify/functions/binder-api?resource=appearance').then(r=>r.ok?r.json():null).then(a=>{if(a)fillAppearance(a);}).catch(()=>{});
+fetch('/api/v1/appearance').then(r=>r.ok?r.json():null).then(a=>{if(a)fillAppearance(a);}).catch(()=>{});

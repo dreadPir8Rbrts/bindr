@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import vm from 'node:vm';
 const context=vm.createContext({});
-vm.runInContext(fs.readFileSync('card-framing.js','utf8')+fs.readFileSync('catalog-frames.js','utf8')+';globalThis.frames=reviewedCatalogFrames;',context);
+vm.runInContext(fs.readFileSync('frontend/card-framing.js','utf8')+fs.readFileSync('frontend/catalog-frames.js','utf8')+';globalThis.frames=reviewedCatalogFrames;',context);
 const cards=JSON.parse(fs.readFileSync('inventory.json','utf8')).cards.filter(card=>!card.sold);
 for(const card of cards){
  const entry=context.frames[card.id];
