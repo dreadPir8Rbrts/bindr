@@ -2,8 +2,8 @@
 // One queue belongs to the open listing. Successful uploads are never retried.
 let sellerUploadQueue=[],sellerUploading=false,uploadSerial=0;
 function uploadPhotoRequest(url,options){return new Promise((resolve,reject)=>{
- const xhr=new XMLHttpRequest();xhr.open('POST',url);xhr.withCredentials=true;xhr.timeout=90000;
- xhr.setRequestHeader('Content-Type',options.body.type);
+ const xhr=new XMLHttpRequest();xhr.open('POST',url);xhr.timeout=90000;
+ xhr.setRequestHeader('Content-Type',options.body.type);for(const [name,value] of Object.entries(options.headers||{}))xhr.setRequestHeader(name,value);
  xhr.upload.onprogress=e=>{if(e.lengthComputable)options.onUploadProgress(Math.min(99,Math.round(e.loaded/e.total*100)));};
  xhr.onload=()=>{if(!xhr.status){reject(Error('Upload connection lost. Retry this photo.'));return;}resolve(new Response(xhr.responseText,{status:xhr.status,headers:{'Content-Type':'application/json'}}));};
  xhr.onerror=()=>reject(Error('Upload connection lost. Retry this photo.'));xhr.ontimeout=()=>reject(Error('Upload timed out. Check your connection and retry this photo.'));xhr.send(options.body);

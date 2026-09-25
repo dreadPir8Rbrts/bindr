@@ -15,6 +15,9 @@ class Settings(BaseSettings):
 
     frontend_dir: Path = ROOT_DIR / "frontend"
     database_url: Optional[str] = Field(default=None, validation_alias="BINDR_SUPABASE_CONNECTION")
+    # Supabase Auth. Both values are public (the browser uses them to sign in).
+    supabase_url: Optional[str] = None
+    supabase_publishable_key: Optional[str] = None
 
     @property
     def sqlalchemy_database_url(self) -> str:
