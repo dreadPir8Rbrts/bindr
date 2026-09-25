@@ -156,3 +156,15 @@ def test_supabase_api_roles_have_no_access(db: Connection, table: str) -> None:
     for role in ("anon", "authenticated"):
         for privilege in ("SELECT", "INSERT", "UPDATE", "DELETE"):
             assert not run(db, "SELECT has_table_privilege(:r, :t, :p)", r=role, t=f"public.{table}", p=privilege).scalar_one()
+
+
+def test_constraint_names_follow_the_naming_convention(db: Connection) -> None:
+    rows = run(db, """
+        SELECT conrelid::regclass::text, conname FROM pg_constraint
+        WHERE contype = 'c' AND conrelid::regclass::text IN ('listings', 'listing_photos', 'listing_ebay_links', 'binder_settings')
+    """).all()
+    assert rows, "expected check constraints"
+    for table, name in rows:
+        assert name.startswith(f"ck_{table}_"), name
+        assert f"ck_{table}_ck_" not in name, f"doubled prefix: {name}"
+    assert ("listings", "ck_listings_published_complete") in rows

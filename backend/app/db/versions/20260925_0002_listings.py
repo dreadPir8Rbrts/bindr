@@ -1,6 +1,7 @@
 """Listings, listing photos, eBay links and binder settings
 
-Replaces the Netlify Blobs inventory. Row-level security is enabled with no
+Replaces the Netlify Blobs inventory. Check constraint names are wrapped in op.f()
+because the naming convention would otherwise prefix them a second time. Row-level security is enabled with no
 policies and Supabase's API roles lose table access: only the FastAPI backend,
 connecting as the database owner, reads or writes these tables.
 
@@ -41,17 +42,17 @@ def upgrade() -> None:
         sa.Column("version", sa.Integer(), server_default=sa.text("1"), nullable=False),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint(r"id ~ '^c[0-9]+$'", name="ck_listings_id_format"),
-        sa.CheckConstraint("status IN ('draft', 'available', 'sold')", name="ck_listings_status"),
-        sa.CheckConstraint(f"condition IN ({CONDITIONS})", name="ck_listings_condition"),
-        sa.CheckConstraint("char_length(name) <= 300 AND char_length(set_label) <= 400", name="ck_listings_text_lengths"),
-        sa.CheckConstraint("char_length(description) <= 20000", name="ck_listings_description_length"),
-        sa.CheckConstraint("price_cents IS NULL OR (price_cents > 0 AND price_cents <= 10000000000)", name="ck_listings_price_range"),
+        sa.CheckConstraint(r"id ~ '^c[0-9]+$'", name=op.f("ck_listings_id_format")),
+        sa.CheckConstraint("status IN ('draft', 'available', 'sold')", name=op.f("ck_listings_status")),
+        sa.CheckConstraint(f"condition IN ({CONDITIONS})", name=op.f("ck_listings_condition")),
+        sa.CheckConstraint("char_length(name) <= 300 AND char_length(set_label) <= 400", name=op.f("ck_listings_text_lengths")),
+        sa.CheckConstraint("char_length(description) <= 20000", name=op.f("ck_listings_description_length")),
+        sa.CheckConstraint("price_cents IS NULL OR (price_cents > 0 AND price_cents <= 10000000000)", name=op.f("ck_listings_price_range")),
         sa.CheckConstraint(
             "status = 'draft' OR (btrim(name) <> '' AND btrim(set_label) <> '' AND price_cents IS NOT NULL)",
-            name="ck_listings_published_complete",
+            name=op.f("ck_listings_published_complete"),
         ),
-        sa.CheckConstraint("sold_at IS NULL OR status = 'sold'", name="ck_listings_sold_at_only_when_sold"),
+        sa.CheckConstraint("sold_at IS NULL OR status = 'sold'", name=op.f("ck_listings_sold_at_only_when_sold")),
         sa.ForeignKeyConstraint(["card_v2_id"], ["cards_v2.id"], name="fk_listings_card_v2_id", ondelete="SET NULL"),
         sa.PrimaryKeyConstraint("id", name="pk_listings"),
     )
@@ -72,11 +73,11 @@ def upgrade() -> None:
         sa.Column("height", sa.Integer(), nullable=True),
         sa.Column("frame", postgresql.JSONB(), nullable=True),
         sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint("role IN ('', 'front', 'back', 'detail')", name="ck_listing_photos_role"),
-        sa.CheckConstraint("content_type IN ('image/jpeg', 'image/png', 'image/webp')", name="ck_listing_photos_content_type"),
-        sa.CheckConstraint("position >= 0 AND position < 20", name="ck_listing_photos_position_range"),
-        sa.CheckConstraint("(listing_id IS NULL) = (position IS NULL)", name="ck_listing_photos_attached_has_position"),
-        sa.CheckConstraint("frame IS NULL OR jsonb_typeof(frame) = 'object'", name="ck_listing_photos_frame_object"),
+        sa.CheckConstraint("role IN ('', 'front', 'back', 'detail')", name=op.f("ck_listing_photos_role")),
+        sa.CheckConstraint("content_type IN ('image/jpeg', 'image/png', 'image/webp')", name=op.f("ck_listing_photos_content_type")),
+        sa.CheckConstraint("position >= 0 AND position < 20", name=op.f("ck_listing_photos_position_range")),
+        sa.CheckConstraint("(listing_id IS NULL) = (position IS NULL)", name=op.f("ck_listing_photos_attached_has_position")),
+        sa.CheckConstraint("frame IS NULL OR jsonb_typeof(frame) = 'object'", name=op.f("ck_listing_photos_frame_object")),
         sa.ForeignKeyConstraint(["listing_id"], ["listings.id"], name="fk_listing_photos_listing_id", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("id", name="pk_listing_photos"),
         sa.UniqueConstraint("storage_key", name="uq_listing_photos_storage_key"),
@@ -99,8 +100,8 @@ def upgrade() -> None:
         sa.Column("listing_id", sa.Text(), nullable=False),
         sa.Column("status", sa.Text(), nullable=False),
         sa.Column("checked_at", sa.DateTime(timezone=True), nullable=False),
-        sa.CheckConstraint(r"item_id ~ '^[0-9]{9,15}$'", name="ck_listing_ebay_links_item_id_format"),
-        sa.CheckConstraint("status IN ('active', 'ended', 'sold', 'unknown')", name="ck_listing_ebay_links_status"),
+        sa.CheckConstraint(r"item_id ~ '^[0-9]{9,15}$'", name=op.f("ck_listing_ebay_links_item_id_format")),
+        sa.CheckConstraint("status IN ('active', 'ended', 'sold', 'unknown')", name=op.f("ck_listing_ebay_links_status")),
         sa.ForeignKeyConstraint(["listing_id"], ["listings.id"], name="fk_listing_ebay_links_listing_id", ondelete="CASCADE"),
         sa.PrimaryKeyConstraint("item_id", name="pk_listing_ebay_links"),
     )
@@ -113,12 +114,12 @@ def upgrade() -> None:
         sa.Column("style", sa.Text(), server_default=sa.text("'modern'"), nullable=False),
         sa.Column("rings", sa.Boolean(), server_default=sa.text("false"), nullable=False),
         sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.CheckConstraint("id = 1", name="ck_binder_settings_single_row"),
+        sa.CheckConstraint("id = 1", name=op.f("ck_binder_settings_single_row")),
         sa.CheckConstraint(
             "color IN ('olive', 'charcoal', 'oxblood', 'navy', 'mint', 'lavender', 'cream', 'retro')",
-            name="ck_binder_settings_color",
+            name=op.f("ck_binder_settings_color"),
         ),
-        sa.CheckConstraint("style IN ('modern', 'classic', 'soft')", name="ck_binder_settings_style"),
+        sa.CheckConstraint("style IN ('modern', 'classic', 'soft')", name=op.f("ck_binder_settings_style")),
         sa.PrimaryKeyConstraint("id", name="pk_binder_settings"),
     )
     # The Netlify version's default appearance: navy, modern, no rings.
