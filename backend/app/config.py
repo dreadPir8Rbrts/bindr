@@ -1,7 +1,9 @@
 """Application settings, loaded from the repository-root .env file."""
 
 from pathlib import Path
+from typing import Optional
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -12,6 +14,18 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=ROOT_DIR / ".env", extra="ignore")
 
     frontend_dir: Path = ROOT_DIR / "frontend"
+    database_url: Optional[str] = Field(default=None, validation_alias="BINDR_SUPABASE_CONNECTION")
+
+    @property
+    def sqlalchemy_database_url(self) -> str:
+        """The Supabase URI with the psycopg 3 driver selected."""
+        if not self.database_url:
+            raise RuntimeError("BINDR_SUPABASE_CONNECTION is not set in .env")
+        url = self.database_url
+        for prefix in ("postgresql://", "postgres://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url[len(prefix):]
+        return url
 
 
 settings = Settings()

@@ -8,6 +8,7 @@ node_modules/
 dist/
 .netlify/
 backend/.venv/
+backend/.pgtest/
 __pycache__/
 *.pyc
 .pytest_cache/
