@@ -7,7 +7,7 @@ Seller:  GET /listings (including drafts, with versions), PUT/DELETE /listings/{
 Seller writes return the seller inventory so the page can refresh in one round trip.
 """
 
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, ConfigDict
@@ -18,6 +18,7 @@ from app.auth import Seller, require_seller
 from app.db.session import get_db
 from app.models.listings import BINDER_COLORS, BINDER_STYLES, BinderSettings
 from app.services import listings as service
+from app.services.storage import S3PhotoStorage, delete_quietly, get_optional_storage
 
 router = APIRouter(tags=["listings"])
 
@@ -45,14 +46,20 @@ def seller_listings(_: Seller = Depends(require_seller), db: Session = Depends(g
 
 
 @router.put("/listings/{listing_id}")
-def save_listing(listing_id: str, body: SaveListingRequest, _: Seller = Depends(require_seller), db: Session = Depends(get_db)) -> dict:
-    service.save_listing(db, listing_id, body.card)
+def save_listing(
+    listing_id: str, body: SaveListingRequest, _: Seller = Depends(require_seller), db: Session = Depends(get_db),
+    storage: Optional[S3PhotoStorage] = Depends(get_optional_storage),
+) -> dict:
+    delete_quietly(storage, service.save_listing(db, listing_id, body.card))
     return service.seller_inventory(db)
 
 
 @router.delete("/listings/{listing_id}")
-def delete_listing(listing_id: str, version: int = Query(...), _: Seller = Depends(require_seller), db: Session = Depends(get_db)) -> dict:
-    service.delete_listing(db, listing_id, version)
+def delete_listing(
+    listing_id: str, version: int = Query(...), _: Seller = Depends(require_seller), db: Session = Depends(get_db),
+    storage: Optional[S3PhotoStorage] = Depends(get_optional_storage),
+) -> dict:
+    delete_quietly(storage, service.delete_listing(db, listing_id, version))
     return service.seller_inventory(db)
 
 

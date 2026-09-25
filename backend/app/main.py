@@ -8,7 +8,7 @@ frontend/ on the same origin, so the browser needs no CORS configuration.
 from fastapi import APIRouter, FastAPI, HTTPException, Request, status
 from fastapi.staticfiles import StaticFiles
 
-from app.api import health, listings, session
+from app.api import health, listings, photos, session
 from app.config import settings
 
 app = FastAPI(title="Bindr API", version="0.1.0")
@@ -33,6 +33,7 @@ api = APIRouter(prefix="/api/v1")
 api.include_router(health.router)
 api.include_router(session.router)
 api.include_router(listings.router)
+api.include_router(photos.router)
 
 
 @api.api_route("/{path:path}", methods=["GET", "POST", "PUT", "PATCH", "DELETE"], include_in_schema=False)

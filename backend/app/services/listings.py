@@ -25,7 +25,7 @@ from app.models.listings import (
     CONDITIONS, EBAY_STATUSES, MAX_PHOTOS_PER_LISTING, MAX_PRICE_CENTS, PHOTO_ROLES,
     BinderSettings, Listing, ListingEbayLink, ListingPhoto,
 )
-from app.services.photos import content_type_for, photo_key, photo_url
+from app.services.photos import content_type_for, is_storage_key, photo_key, photo_url
 
 MAX_EBAY_LINKS = 20
 FIELDS_MESSAGE = "Check the card name, set, condition, availability and price."
@@ -268,7 +268,13 @@ def _integrity_error(error: IntegrityError) -> CardError:
     return CardError(FIELDS_MESSAGE)
 
 
-def _sync_photos(db: Session, listing: Listing, card: CleanCard) -> None:
+def _stored_objects(photo: ListingPhoto) -> List[str]:
+    """S3 objects behind a photo row (static frontend/images photos have none)."""
+    return [k for k in (photo.storage_key, photo.thumb_key) if k and is_storage_key(k)]
+
+
+def _sync_photos(db: Session, listing: Listing, card: CleanCard) -> List[str]:
+    """Make the listing's photos match the card; returns S3 objects no longer used."""
     others = db.scalars(
         select(ListingPhoto).where(ListingPhoto.storage_key.in_(card.photo_keys), ListingPhoto.listing_id != listing.id)
     ).all()
@@ -281,8 +287,10 @@ def _sync_photos(db: Session, listing: Listing, card: CleanCard) -> None:
     current = {p.storage_key: p for p in listing.photos}
     stored_frames = {p.storage_key: p.frame for p in listing.photos}
 
+    removed: List[str] = []
     for key, photo in current.items():
         if key not in card.photo_keys:
+            removed += _stored_objects(photo)
             db.delete(photo)
     # One front/back is a unique index (not deferrable): clear roles before reassigning them.
     for photo in current.values():
@@ -292,13 +300,18 @@ def _sync_photos(db: Session, listing: Listing, card: CleanCard) -> None:
     for position, key in enumerate(card.photo_keys):
         photo = current.get(key) or pending.get(key)
         if photo is None:
+            if is_storage_key(key):  # S3 photos exist only once their upload is confirmed
+                raise CardError("A photo didn't finish uploading. Remove it and upload it again.")
             photo = ListingPhoto(storage_key=key, content_type=content_type_for(key))
             db.add(photo)
         photo.listing_id = listing.id
         photo.position = position
         photo.role = card.photo_roles[position]
         photo.frame = (card.frames if card.frames is not None else stored_frames).get(key)
-        photo.thumb_key = card.thumb_key if position == 0 and card.thumb_key != key else None
+        if not is_storage_key(key):
+            # Static photos: the cover may have a separate grid image (images/grid/...).
+            photo.thumb_key = card.thumb_key if position == 0 and card.thumb_key != key else None
+    return removed
 
 
 def _sync_ebay_links(db: Session, listing: Listing, links: List[Dict[str, Any]]) -> None:
@@ -318,8 +331,11 @@ def _sync_ebay_links(db: Session, listing: Listing, links: List[Dict[str, Any]])
         db.add(link)
 
 
-def save_listing(db: Session, listing_id: str, raw: Any) -> None:
-    """Create or update one listing. Updates must carry the version they were edited from."""
+def save_listing(db: Session, listing_id: str, raw: Any) -> List[str]:
+    """Create or update one listing. Updates must carry the version they were edited from.
+
+    Returns S3 objects the listing no longer uses, to delete after the commit.
+    """
     card = clean_card(raw)
     if card.id != listing_id:
         raise CardError("The listing id does not match the address.")
@@ -347,7 +363,7 @@ def save_listing(db: Session, listing_id: str, raw: Any) -> None:
         listing.condition, listing.rare, listing.description = card.condition, card.rare, card.description
         listing.binder_number = card.binder_number
         listing.updated_at = func.now()
-        _sync_photos(db, listing, card)
+        removed = _sync_photos(db, listing, card)
         if card.ebay_links is not None:
             _sync_ebay_links(db, listing, card.ebay_links)
         db.commit()
@@ -357,15 +373,21 @@ def save_listing(db: Session, listing_id: str, raw: Any) -> None:
     except HTTPException:
         db.rollback()
         raise
+    return removed
 
 
-def delete_listing(db: Session, listing_id: str, version: int) -> None:
-    listing = db.scalars(select(Listing).where(Listing.id == listing_id).with_for_update()).one_or_none()
+def delete_listing(db: Session, listing_id: str, version: int) -> List[str]:
+    """Delete a listing and its photo rows; returns their S3 objects to delete after the commit."""
+    listing = db.scalars(
+        select(Listing).where(Listing.id == listing_id).with_for_update().options(selectinload(Listing.photos))
+    ).one_or_none()
     if listing is None:
         db.rollback()
         raise CardError("This listing no longer exists. Reload inventory.", status.HTTP_404_NOT_FOUND)
     if listing.version != version:
         db.rollback()
         raise CardError("This listing changed in another window. Reload before deleting.", status.HTTP_409_CONFLICT)
+    removed = [key for photo in listing.photos for key in _stored_objects(photo)]
     db.delete(listing)
     db.commit()
+    return removed

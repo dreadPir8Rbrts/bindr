@@ -126,12 +126,9 @@ function buyerDescription(value){
 
 
 
-// Small cached browsing images; the original remains available in the inspector.
-function browsePhoto(source,width=480){
- if(!source||!/^(?:\.?\/)?images\/|^\/\.netlify\/functions\/binder-api\?resource=photo&/.test(source))return source;
- const path=source.startsWith('/')?source:'/'+source.replace(/^\.\//,'');
- return '/.netlify/images?'+new URLSearchParams({url:path,w:String(width),q:'78',fit:'contain'});
-}
+// Browsing images. Grid views pass the listing thumbnail (a 480px rendition for uploaded
+// photos, images/grid for bundled ones); the original remains available in the inspector.
+function browsePhoto(source,width=480){return source;}
 function browseImageAttributes(source,width=480){
  const safe=s=>String(s||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  return 'src="'+safe(browsePhoto(source,width))+'" data-original="'+safe(source)+'"';

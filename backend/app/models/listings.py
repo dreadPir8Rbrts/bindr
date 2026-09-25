@@ -72,10 +72,13 @@ class Listing(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    # Deleting a listing deletes its photos and links (matching ON DELETE CASCADE), never detaches them.
     photos: Mapped[List["ListingPhoto"]] = relationship(
-        back_populates="listing", order_by="ListingPhoto.position", passive_deletes=True,
+        back_populates="listing", order_by="ListingPhoto.position", cascade="all, delete-orphan", passive_deletes=True,
     )
-    ebay_links: Mapped[List["ListingEbayLink"]] = relationship(back_populates="listing", passive_deletes=True)
+    ebay_links: Mapped[List["ListingEbayLink"]] = relationship(
+        back_populates="listing", cascade="all, delete-orphan", passive_deletes=True,
+    )
 
 
 class ListingPhoto(Base):
