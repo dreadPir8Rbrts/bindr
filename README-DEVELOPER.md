@@ -1,5 +1,9 @@
 # Bindr developer handoff
 
+> **Migration in progress (branch `fastapi-migration`):** moving from Netlify Functions + Blobs to FastAPI + Supabase (Postgres, Auth) + S3, runnable locally with no Netlify dependency. Browser files now live in `frontend/`; the API lives in `backend/`. Until the API port lands, pages served by FastAPI still call the old `/.netlify/functions/binder-api` URLs, so live inventory and seller saving do not work locally yet.
+>
+> Local development: `make setup` once, then `make dev` → http://localhost:8000 (seller page: `/seller.html`). `make test` runs pytest and the Node frontend tests. Local runs use the production Supabase database and S3 bucket, so treat local writes as live.
+
 Approved release: September 18, 2026 — navy theme with clear-history fix. Navy is the default for buyer and seller pages and the API appearance fallback; explicitly saved seller themes still take precedence. Clearing recent history focuses non-editable catalog results rather than search, preventing an unwanted keyboard opening. All 49 local tests pass, including the new recent-history regression test.
 Production: https://pokemonhooperbinr.netlify.app/
 Approved preview: https://6aadbb7f193c47a4f280fa22--pokemonhooperbinr.netlify.app/

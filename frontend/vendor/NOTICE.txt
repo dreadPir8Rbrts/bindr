@@ -1,0 +1,1 @@
+HEIC conversion: heic-to 1.5.2 (LGPL-3.0), using libheif. Source and license: https://github.com/hoppergee/heic-to/tree/v1.5.2 . Distributed as a separate replaceable module.
