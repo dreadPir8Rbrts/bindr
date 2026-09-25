@@ -1,6 +1,7 @@
 'use strict';
-// Seller card scanner: sends a small JPEG of the card to the scan endpoint
-// (Google Vision OCR + catalog match) and offers the matched card's name and set.
+// Seller card scanner: sends a small JPEG of the card to POST /api/v1/scan (Google Vision
+// OCR + catalog match) and offers the matched card's name and set. Choosing a result also
+// records the catalog card on the listing (catalogCardId), saved with the listing.
 const SCAN_EDGE=800,SCAN_QUALITY=0.7;
 let scanBusy=false,scanOffers=[];
 function scanStatus(s){sellerEl('scanStatus').textContent=s;}
@@ -25,7 +26,7 @@ async function runScan(prepare){
 }
 sellerEl('scanFrontPhoto').onclick=()=>runScan(async()=>{const r=await fetch(scanPhotoSource(),{credentials:'same-origin'});if(!r.ok)throw Error('That photo couldn’t be loaded for scanning. Try scanning a new photo.');return r.blob();});
 sellerEl('scanNewPhoto').onchange=e=>{const file=e.target.files?.[0];e.target.value='';if(file)runScan(async()=>(await prepareSellerPhoto(file,stage=>scanStatus(stage))).blob);};
-sellerEl('scanResults').onclick=e=>{const b=e.target.closest('[data-scan-use]');if(!b)return;const c=scanOffers[Number(b.dataset.scanUse)];if(!c)return;sellerEl('sellerName').value=c.name;sellerEl('sellerSet').value=c.set;sellerEl('sellerName').dispatchEvent(new Event('input',{bubbles:true}));clearScan();sellerMessage('Name and set filled from the scan. Check them against your card, then choose this copy’s condition and price.');};
+sellerEl('scanResults').onclick=e=>{const b=e.target.closest('[data-scan-use]');if(!b)return;const c=scanOffers[Number(b.dataset.scanUse)];if(!c)return;if(editing)editing.catalogCardId=c.id;sellerEl('sellerName').value=c.name;sellerEl('sellerSet').value=c.set;sellerEl('sellerName').dispatchEvent(new Event('input',{bubbles:true}));clearScan();sellerMessage('Name and set filled from the scan. Check them against your card, then choose this copy’s condition and price.');};
 const renderPhotosBeforeScan=renderSellerPhotos;renderSellerPhotos=function(){renderPhotosBeforeScan.apply(this,arguments);refreshScanButton();};
 const loadBeforeScan=loadSellerCard;loadSellerCard=function(id){loadBeforeScan(id);clearScan();refreshScanButton();};
 sellerEl('sellerPhotos').addEventListener('change',refreshScanButton);

@@ -11,6 +11,7 @@ import hashlib
 import json
 import math
 import re
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from decimal import ROUND_HALF_UP, Decimal
@@ -33,6 +34,7 @@ PHOTOS_MESSAGE = "Use 1–20 uploaded photos."
 STALE_MESSAGE = "This listing changed in another window. Reload the seller binder before saving again."
 EBAY_ITEM_ID = re.compile(r"^\d{9,15}$")
 LISTING_ID = re.compile(r"^c\d+$")
+KEEP = object()  # a field the card left out: keep the stored value
 
 
 class CardError(HTTPException):
@@ -56,6 +58,7 @@ class CleanCard:
     thumb_key: Optional[str]
     frames: Optional[Dict[str, Dict[str, float]]]  # None: keep the stored frames
     ebay_links: Optional[List[Dict[str, Any]]] = field(default=None)  # None: keep the stored links
+    catalog_card_id: Any = field(default=None)  # KEEP: leave the stored link; None: clear it
 
 
 # ---------------------------------------------------------------------------
@@ -161,6 +164,12 @@ def clean_card(raw: Any) -> CleanCard:
     keys_by_url = dict(zip(photos, keys))
     frames = _clean_frames(raw["photoFrames"], keys_by_url) if raw.get("photoFrames") is not None else None
     ebay = _clean_ebay_links(raw["ebayListings"]) if raw.get("ebayListings") is not None else None
+    catalog_card_id: Any = KEEP
+    if "catalogCardId" in raw:  # the catalog card a scan identified
+        try:
+            catalog_card_id = uuid.UUID(raw["catalogCardId"]) if raw["catalogCardId"] is not None else None
+        except (TypeError, ValueError, AttributeError):
+            raise CardError("That catalog card isn't recognised. Scan the card again.")
 
     return CleanCard(
         id=raw["id"],
@@ -177,6 +186,7 @@ def clean_card(raw: Any) -> CleanCard:
         thumb_key=thumb_key,
         frames=frames,
         ebay_links=ebay,
+        catalog_card_id=catalog_card_id,
     )
 
 
@@ -216,6 +226,8 @@ def card_json(listing: Listing, include_private: bool = False) -> Dict[str, Any]
     if include_private:
         card["status"] = listing.status
         card["version"] = listing.version
+        if listing.card_v2_id is not None:
+            card["catalogCardId"] = str(listing.card_v2_id)
     return card
 
 
@@ -263,6 +275,8 @@ def _integrity_error(error: IntegrityError) -> CardError:
         return CardError("That eBay listing is already linked to another card.")
     if constraint == "pk_listings":
         return CardError("A listing with this id was just created in another window. Reload inventory.", status.HTTP_409_CONFLICT)
+    if constraint == "fk_listings_card_v2_id":
+        return CardError("That catalog card isn't recognised. Scan the card again.")
     if constraint == "uq_listing_photos_storage_key":
         return CardError("A photo in this listing is already used by another listing.")
     return CardError(FIELDS_MESSAGE)
@@ -362,6 +376,8 @@ def save_listing(db: Session, listing_id: str, raw: Any) -> List[str]:
         listing.name, listing.set_label, listing.price_cents = card.name, card.set_label, card.price_cents
         listing.condition, listing.rare, listing.description = card.condition, card.rare, card.description
         listing.binder_number = card.binder_number
+        if card.catalog_card_id is not KEEP:
+            listing.card_v2_id = card.catalog_card_id
         listing.updated_at = func.now()
         removed = _sync_photos(db, listing, card)
         if card.ebay_links is not None:

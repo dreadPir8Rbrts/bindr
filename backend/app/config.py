@@ -25,6 +25,9 @@ class Settings(BaseSettings):
     aws_s3_bucket: Optional[str] = None
     s3_key_prefix: str = "photos/"
     s3_public_base_url: Optional[str] = None  # e.g. a CloudFront domain; defaults to the bucket URL
+    # Google Cloud Vision for the card scanner: base64 service-account JSON (as in leftovers.gg) or an API key.
+    google_credentials_base64: Optional[str] = None
+    google_vision_api_key: Optional[str] = None
 
     @property
     def photo_base_url(self) -> Optional[str]:
