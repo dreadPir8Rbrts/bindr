@@ -107,7 +107,8 @@ class ListingPhoto(Base):
     bytes: Mapped[Optional[int]] = mapped_column(Integer())
     width: Mapped[Optional[int]] = mapped_column(Integer())
     height: Mapped[Optional[int]] = mapped_column(Integer())
-    frame: Mapped[Optional[Any]] = mapped_column(JSONB())  # catalog crop {x, y, w, h}, fractions of the photo
+    # Catalog crop {x, y, w, h} as fractions of the photo. none_as_null: store None as SQL NULL, not JSON null.
+    frame: Mapped[Optional[Any]] = mapped_column(JSONB(none_as_null=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
     listing: Mapped[Optional[Listing]] = relationship(back_populates="photos")

@@ -17,6 +17,7 @@ from alembic.config import Config
 from sqlalchemy import Connection, Engine, create_engine, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
+from sqlalchemy.orm import Session
 
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", "postgresql+psycopg://postgres@127.0.0.1:54329/bindr_test")
@@ -69,3 +70,28 @@ def db(migrated_engine: Engine) -> Iterator[Connection]:
     finally:
         transaction.rollback()
         connection.close()
+
+
+@pytest.fixture
+def api(db: Connection):
+    """TestClient whose requests use the test transaction and are signed in as the seller."""
+    from fastapi.testclient import TestClient
+
+    from app.auth import Seller, require_seller
+    from app.db.session import get_db
+    from app.main import app
+
+    def test_db() -> Iterator[Session]:
+        # Service commits become savepoint releases; the test transaction is still rolled back.
+        session = Session(bind=db, join_transaction_mode="create_savepoint", expire_on_commit=False)
+        try:
+            yield session
+        finally:
+            session.close()
+
+    app.dependency_overrides[get_db] = test_db
+    app.dependency_overrides[require_seller] = lambda: Seller(user_id="seller", email="admin@bindr.com")
+    try:
+        yield TestClient(app)
+    finally:
+        app.dependency_overrides.clear()

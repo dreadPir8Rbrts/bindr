@@ -1,6 +1,6 @@
 'use strict';
 let liveRevision=null,liveRefreshing=false;
-async function fetchLiveInventory(){const response=await fetch('/.netlify/functions/binder-api?resource=inventory',{cache:'no-store',signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error('Inventory unavailable');return response.json();}
+async function fetchLiveInventory(){const response=await fetch('/api/v1/inventory',{cache:'no-store',signal:AbortSignal.timeout(12000)});if(!response.ok)throw Error('Inventory unavailable');return response.json();}
 function liveStatus(text){document.getElementById('liveStatus').textContent=text;}
 async function refreshLiveBinder(){
  if(liveRefreshing||document.hidden)return;liveRefreshing=true;
