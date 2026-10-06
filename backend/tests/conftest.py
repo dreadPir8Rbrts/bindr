@@ -34,7 +34,9 @@ def migrated_engine() -> Iterator[Engine]:
     url = make_url(TEST_DATABASE_URL)
     if "supabase" in (url.host or ""):
         pytest.exit("TEST_DATABASE_URL points at Supabase; tests only run against a local database.", returncode=2)
-    engine = create_engine(url)
+    # Same search path as Supabase's postgres role, so unqualified extension functions
+    # (unaccent in the scanner's matcher) resolve as they do in production.
+    engine = create_engine(url, connect_args={"options": "-c search_path=\"$user\",public,extensions"})
     try:
         engine.connect().close()
     except OperationalError:

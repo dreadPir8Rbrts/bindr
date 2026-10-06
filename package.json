@@ -8,8 +8,7 @@
   },
   "dependencies": {
     "@netlify/blobs": "11.0.3",
-    "heic-to": "1.5.2",
-    "postgres": "3.4.9"
+    "heic-to": "1.5.2"
   },
   "engines": {
     "node": ">=22"
