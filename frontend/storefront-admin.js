@@ -64,6 +64,7 @@
   }
   try{
    if(action==='resume'){const data=await api('listings');const card=data.cards.find(c=>c.id===id&&c.status==='draft');if(!card)throw Error('This draft no longer exists. Refresh drafts.');editor.open(card);}
+   else if(action==='new'){editor.search();}
    else{editor.fresh();if(action==='scan')editor.dialog.dispatchEvent(new Event('scan-entry'));}
    editor.dialog.appendChild(el('adminMobileNav'));
   }catch(e){el(draftsVisible?'storefrontDraftStatus':'storefrontAdminStatus').textContent=e.message;}

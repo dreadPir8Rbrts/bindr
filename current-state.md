@@ -25,6 +25,10 @@ The app is partway through a migration **from** Netlify (static site + one Netli
 
 ---
 
+## Storefront Add listing
+
+Add listing now opens catalog search inside the storefront using its existing authorized API client. Search by card name, number, or set (including combinations); selecting a result prefills the guided details form, followed by listing photos, preview, and publication. Manual entry remains available. The seller-only `GET /api/v1/catalog/search?q=...` reads the Pokémon catalog and returns up to 25 matches; it does not upload photos or create listings.
+
 ## Architecture
 
 ```

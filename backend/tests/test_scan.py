@@ -155,3 +155,25 @@ def test_catalog_link_is_saved_kept_and_cleared(api: TestClient, db: Connection)
 def test_invalid_or_unknown_catalog_cards_are_rejected(api: TestClient, value) -> None:
     response = api.put("/api/v1/listings/c1", json={"card": {**CARD, "catalogCardId": value}})
     assert response.status_code == 400 and "catalog card" in response.json()["detail"]
+
+
+@pytest.mark.parametrize('query,expected', [
+    ('CHARIZ', {'charizard'}), ('Blastoise Base Set 2', {'blastoise_b'}),
+    ('4/102', {'charizard'}), ('Gengar', {'gengar'}), ('ゲンガー', {'gengar'}),
+    ('missing', set()), ('%%', set()), ('__', set()), ('  ', set()),
+])
+def test_catalog_search(api, db, query, expected):
+    ids = seed_catalog(db)
+    response = api.get('/api/v1/catalog/search', params={'q': query})
+    assert response.status_code == 200
+    assert {c['id'] for c in response.json()['cards']} == {str(ids[k]) for k in expected}
+    assert response.json()['has_more'] is False
+
+
+def test_catalog_search_requires_sign_in(migrated_engine):
+    assert TestClient(app).get('/api/v1/catalog/search?q=Charizard').status_code == 401
+
+
+@pytest.mark.parametrize('query', ['', 'x', 'a' * 101])
+def test_catalog_search_input_limits(api, query):
+    assert api.get('/api/v1/catalog/search', params={'q': query}).status_code == 422

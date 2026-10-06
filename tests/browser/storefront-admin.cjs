@@ -22,6 +22,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    if(p.startsWith('/api/v1/')){
     if(p.endsWith('/inventory'))return route.fulfill({json:{cards:cards.filter(c=>c.status!=='draft'),revision}});
     if(currentRole!=='seller')return route.fulfill({status:403,json:{detail:'Seller required'}});
+    if(p.endsWith('/catalog/search'))return route.fulfill({json:{cards:[{id:'00000000-0000-4000-8000-000000000001',name:'Pikachu',set:'Base Set · 58/102 · Common',image_url:'images/full/c1_1.jpg',language_code:'EN'}],has_more:false}});
     if(p.endsWith('/session'))return route.fulfill({json:{authenticated:true,email:'seller@example.test'}});
     if(p.endsWith('/scan')){scanCalls++;return route.fulfill({json:scanCalls===1?{status:'no_match'}:{status:'matched',card:{id:'00000000-0000-4000-8000-000000000001',name:'Pikachu',set:'Base Set · 58/102 · Common',image_url:'images/full/c1_1.jpg'},confidence:.99}});}
     if(p.includes('/listings')){
@@ -50,8 +51,13 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await page.click('#storefrontDraftBack');assert.equal(await page.locator('#catalog').isVisible(),true);
    assert.equal(await page.locator('#binderGrid').getByText('Private draft').count(),0);
    await page.reload();await page.locator('[data-admin-nav="new"]').waitFor();await page.screenshot({path:'/tmp/bindr-storefront-admin-mobile.png',fullPage:true});
-   await page.click('[data-admin-nav="new"]');const editor=page;await editor.locator('#guidedEditor').waitFor();
-   await editor.locator('#guidedExit').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.length,3);
+   const beforeNew={sessionChecks,sellerPages};await page.click('[data-admin-nav="new"]');assert.deepEqual({sessionChecks,sellerPages},beforeNew);const editor=page;await editor.locator('#guidedEditor').waitFor();
+   await editor.locator('#guidedCatalogQuery').fill('Pikachu 58/102');await editor.locator('.catalog-result').waitFor();
+   await page.screenshot({path:'/tmp/bindr-catalog-search.png'});
+   await editor.locator('.catalog-result').click();await editor.locator('[data-guided-step="5"]').waitFor();
+   assert.equal(await editor.locator('#guidedName').inputValue(),'Pikachu');assert.equal(await editor.locator('#guidedSet').inputValue(),'Base Set · 58/102 · Common');assert.deepEqual({sessionChecks,sellerPages},beforeNew);
+   await editor.locator('#guidedPrevious').click();await editor.locator('#guidedCatalogQuery').waitFor();
+   await editor.locator('.catalog-result').click();await editor.locator('#guidedExit').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.length,3);
    await page.click('[data-admin-nav="drafts"]');await page.click('[data-admin-resume="c900"]');await editor.locator('#guidedEditor').waitFor();await editor.locator('#guidedNext').click();await editor.locator('#guidedPrice').fill('32');await editor.locator('#guidedPublish').click();await editor.locator('#guidedSuccess').waitFor();await editor.locator('#guidedDone').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.click('#storefrontDraftBack');await page.locator('#binderGrid [data-card="c900"]').waitFor();
    await page.click('[data-admin-edit="c900"]');await page.frameLocator('#storefrontEditorFrame').locator('#sellerEditor').waitFor();await page.frameLocator('#storefrontEditorFrame').locator('#sellerPrice').fill('45');await page.frameLocator('#storefrontEditorFrame').locator('#sellerSaveLabel').click();await page.locator('#storefrontEditor').waitFor({state:'hidden'});await page.waitForFunction(()=>document.querySelector('#binderGrid [data-card="c900"] .price').textContent.includes('45'));
    const beforeOpen={sessionChecks,sellerPages,privateReads};await page.click('[data-admin-nav="scan"]');await editor.locator('#guidedScanIntro').waitFor();assert.deepEqual({sessionChecks,sellerPages,privateReads},beforeOpen);
