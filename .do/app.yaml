@@ -1,0 +1,38 @@
+# Deployment template: supply required RUN_TIME secrets in App Platform before
+# creating the app. Never commit a copy containing actual credentials.
+name: bindr
+region: nyc
+ingress:
+  rules:
+    - component:
+        name: web
+      match:
+        path:
+          prefix: /
+services:
+  - name: web
+    github:
+      repo: dreadPir8Rbrts/bindr
+      branch: main
+      deploy_on_push: false
+    source_dir: /
+    dockerfile_path: Dockerfile
+    http_port: 8080
+    instance_count: 1
+    instance_size_slug: apps-s-1vcpu-1gb-fixed
+    health_check:
+      http_path: /api/v1/health
+      initial_delay_seconds: 10
+      period_seconds: 10
+      timeout_seconds: 5
+      failure_threshold: 3
+    envs:
+      - key: S3_KEY_PREFIX
+        value: photos/
+        scope: RUN_TIME
+      - key: AWS_REGION
+        value: us-east-2
+        scope: RUN_TIME
+      - key: AWS_S3_BUCKET
+        value: bindr-photos
+        scope: RUN_TIME

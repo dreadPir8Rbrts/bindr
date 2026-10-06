@@ -21,7 +21,7 @@ The app is partway through a migration **from** Netlify (static site + one Netli
 | 6 | Card scanner on FastAPI (leftovers.gg's Python code) | ✅ Done, live-checked with Google Vision; **not yet pushed or merged** |
 | 7 | Data migration: 270 listings + photos from Netlify Blobs → Postgres + S3 | ⏳ Next |
 | 8 | Camera-first "add a listing" flow on phones, with server-side drafts | ⏳ Planned |
-| 9 | Deploy to DigitalOcean, schedule the cleanup job, retire Netlify | ⏳ Planned |
+| 9 | Deploy to a new DigitalOcean App Platform app, schedule cleanup when draft retention is resolved, retire Netlify | ⏳ Deployment configuration prepared; app creation pending |
 
 ---
 
@@ -238,9 +238,11 @@ Re-run during repository preparation on 2026-10-06: **159 backend tests and 55 N
 - The listing exists as a server-side `draft` from the first photo, replacing browser-only drafts.
 
 **Step 9: deploy and retire Netlify.**
-- DigitalOcean droplet with systemd, nginx and Let's Encrypt (the same pattern as leftovers.gg).
-- Production `.env` with the pooler connection string and `S3_KEY_PREFIX=photos/`.
-- The domain added to S3 CORS, and the cleanup job scheduled daily.
+- **Hosting decision updated 2026-10-06:** create a separate DigitalOcean App Platform app for Bindr, using its default HTTPS address with no custom domain. The owner will archive leftovers.gg separately; do not replace its droplet or app.
+- `Dockerfile`, `.dockerignore` and `.do/app.yaml` are prepared; [deploy/README.md](deploy/README.md) describes the setup. The app spec passes `doctl` schema validation. A container build has not yet run because the local Docker engine is stopped.
+- App creation is pending: the saved DigitalOcean CLI credentials returned 401 and need reauthentication with `doctl auth init`.
+- Supply production runtime environment variables with the exact Supabase pooler connection string and `S3_KEY_PREFIX=photos/`. Credentials stay out of Git and the container image.
+- Add the assigned HTTPS origin to S3 CORS. Before scheduling cleanup, resolve retention for device-only drafts, whose uploaded photos remain pending and can otherwise expire after 24 hours.
 - Netlify code removed, the Netlify site switched off once the new one is verified.
 
 ---
