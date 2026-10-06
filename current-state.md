@@ -20,7 +20,7 @@ The app is partway through a migration **from** Netlify (static site + one Netli
 | 5 | Photo uploads to S3 (presigned POST + confirm) | ✅ Done, live-checked against the bucket |
 | 6 | Card scanner on FastAPI (leftovers.gg's Python code) | ✅ Done, live-checked with Google Vision; **not yet pushed or merged** |
 | 7 | Data migration: 270 listings + photos from Netlify Blobs → Postgres + S3 | ⏳ Next |
-| 8 | Camera-first "add a listing" flow on phones, with server-side drafts | ⏳ Planned |
+| 8 | Camera-first "add a listing" flow on phones, with server-side drafts | ✅ Implemented locally; ready to deploy |
 | 9 | Deploy to a new DigitalOcean App Platform app, schedule cleanup when draft retention is resolved, retire Netlify | ⏳ Deployment configuration prepared; app creation pending |
 
 ---
@@ -233,9 +233,14 @@ Re-run during repository preparation on 2026-10-06: **159 backend tests and 55 N
 - Apply the known data fixes, link listings to catalog cards where the match is unambiguous, and compare counts.
 - Then remove the bundled images from `frontend/`.
 
-**Step 8: camera-first flow.**
-- New listing → camera → front photo saved and scanned automatically → back/detail photos → condition, price → publish.
-- The listing exists as a server-side `draft` from the first photo, replacing browser-only drafts.
+**Step 8: camera-first flow — implemented.**
+- New listing opens Front photo → Identify → More photos → Details & publish. Preview and accept the front to upload, attach it to a private server draft, and automatically scan it. Choose a match or enter identity manually.
+- Back photos are optional (Skip for now); close-ups are supported. Condition, price, description and preview precede explicit publication. Success offers View listing and Add another card.
+- `guided-draft.js` serializes versioned autosaves and reconciles uncertain responses before retrying. Conflicting remote edits are never silently overwritten. Keep the tab open when a save or upload needs retrying.
+- Server drafts appear separately in Continue a draft and resume after sign-in on any device. Drafts infer their resume step from saved content. Their attached photos survive unused-upload cleanup. Delete draft removes it and its photos.
+- Existing published-listing editing and legacy browser drafts keep their existing editor. Legacy browser-only draft photos still need the retention decision below. Download backup exports published inventory only.
+- No migration or new environment variables. Deploy frontend files with the existing Docker build.
+- Verified: 160 backend tests, 60 frontend tests, plus a mocked mobile Chrome flow covering scanning, optional back, reload/resume, a lost publication response, and existing-listing editing. Physical phone camera and production S3/OCR remain deployment smoke checks.
 
 **Step 9: deploy and retire Netlify.**
 - **Hosting decision updated 2026-10-06:** create a separate DigitalOcean App Platform app for Bindr, using its default HTTPS address with no custom domain. The owner will archive leftovers.gg separately; do not replace its droplet or app.

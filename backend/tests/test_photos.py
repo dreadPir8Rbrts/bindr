@@ -210,3 +210,26 @@ def test_uploads_require_sign_in_and_configured_storage(migrated_engine) -> None
     client = TestClient(app)
     assert client.post("/api/v1/photos/uploads", json={"contentType": "image/jpeg", "bytes": 1, "thumbBytes": 1}).status_code == 401
     assert client.post("/api/v1/photos/confirm", json={"key": "x"}).status_code == 401
+
+
+def test_private_draft_retains_front_photo_and_publishes_without_back(api: TestClient, s3: FakeStorage, db) -> None:
+    from sqlalchemy.orm import Session
+    session = Session(bind=db, join_transaction_mode="create_savepoint")
+    url = upload(api, s3).json()["url"]
+    draft = card([url], name="", set="", price=0, status="draft", photoRoles=["front"])
+    response = api.put("/api/v1/listings/c1", json={"card": draft})
+    assert response.status_code == 200, response.text
+    saved = response.json()["cards"][0]
+    assert not api.get("/api/v1/inventory").json()["cards"]
+    assert api.get("/api/v1/listings").json()["cards"][0]["status"] == "draft"
+    old = datetime.now(timezone.utc) - timedelta(days=2)
+    db.execute(text("UPDATE listing_photos SET created_at = :old"), {"old": old})
+    for key in list(s3.objects):
+        s3.objects[key] = (*s3.objects[key][:2], old)
+    assert cleanup_photos(session, s3)["objects"] == []
+    saved.update(name="Pikachu", set="Base · 58/102", price=50, status="available")
+    response = api.put("/api/v1/listings/c1", json={"card": saved})
+    assert response.status_code == 200, response.text
+    public = api.get("/api/v1/inventory").json()["cards"]
+    assert len(public) == 1 and public[0]["photoRoles"] == ["front"]
+    session.close()
