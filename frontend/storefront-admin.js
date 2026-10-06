@@ -2,7 +2,7 @@
 // The server's seller-only session endpoint is the authority; browser mode is just presentation.
 (()=>{
  const el=id=>document.getElementById(id),key='bindr-admin-mode';
- let authorized=false,adminMode=false,checking=null,identity='',draftRequest=0,returnFocus=null;
+ let authorized=false,adminMode=false,checking=null,identity='',draftRequest=0,returnFocus=null,nextDestination=null,currentAction=null;
  const dialog=el('storefrontEditor'),frame=el('storefrontEditorFrame');
  function remember(value){try{value?sessionStorage.setItem(key,JSON.stringify({identity,mode:value})):sessionStorage.removeItem(key);}catch{}}
  function remembered(){try{const saved=JSON.parse(sessionStorage.getItem(key));return saved?.identity===identity&&saved.mode==='admin';}catch{return false;}}
@@ -15,6 +15,7 @@
   });
  }
  function render(){
+  el('adminMobileNav').hidden=!authorized||!adminMode;document.body.classList.toggle('mobile-admin-active',authorized&&adminMode);
   el('storefrontMode').hidden=!authorized;el('storefrontAdminTools').hidden=!authorized||!adminMode;
   el('storefrontLoginLink').hidden=authorized;el('storefrontSignOut').hidden=!authorized;
   el('buyerMode').setAttribute('aria-pressed',String(!adminMode));el('adminMode').setAttribute('aria-pressed',String(adminMode));
@@ -38,19 +39,23 @@
  async function mode(manage){if(dialog.open)return;if(manage&&!await check())return;adminMode=manage;remember(manage?'admin':'buyer');render();if(manage)await drafts();}
  async function openEditor(action,id){
   if(dialog.open||!adminMode||!await check())return;
-  returnFocus=document.activeElement;frame.src='seller.html?'+new URLSearchParams({embed:'storefront',action,...(id?{id}:{})});dialog.showModal();
+  currentAction=action;el('adminMobileNav').querySelectorAll('[data-admin-nav]').forEach(b=>{if(b.dataset.adminNav===action)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current');});
+  returnFocus=document.activeElement;dialog.appendChild(el('adminMobileNav'));frame.src='seller.html?'+new URLSearchParams({embed:'storefront',action,...(id?{id}:{})});dialog.showModal();
  }
  function askClose(){frame.contentWindow?.postMessage({type:'bindr-editor-request-close'},location.origin);}
  async function finished(viewId){
-  dialog.close();frame.src='about:blank';returnFocus?.focus({preventScroll:true});
+  const destination=nextDestination;nextDestination=null;currentAction=null;dialog.close();document.body.appendChild(el('adminMobileNav'));el('adminMobileNav').querySelectorAll('[aria-current]').forEach(b=>b.removeAttribute('aria-current'));frame.src='about:blank';returnFocus?.focus({preventScroll:true});
   if(typeof refreshLiveBinder==='function'&&typeof cardMap!=='undefined')await refreshLiveBinder();
   if(await check()&&adminMode)await drafts();
+  if(destination==='tools'){location.href='seller.html';return;}if(destination){await openEditor(destination);return;}
   if(viewId&&typeof openCard==='function'&&cardMap.has(viewId))openCard(viewId);
  }
  window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow||!dialog.open)return;if(e.data?.type==='bindr-editor-closed')finished();if(e.data?.type==='bindr-editor-view'&&/^c\d+$/.test(e.data.id))finished(e.data.id);});
  dialog.addEventListener('click',e=>{if(e.target===dialog){e.stopImmediatePropagation();askClose();}},true);
  dialog.addEventListener('cancel',e=>{e.preventDefault();askClose();});el('storefrontEditorClose').onclick=askClose;
  el('buyerMode').onclick=()=>mode(false);el('adminMode').onclick=()=>mode(true);
+ el('storefrontScan').onclick=()=>openEditor('scan');
+ el('adminMobileNav').onclick=e=>{const b=e.target.closest('[data-admin-nav]');if(!b)return;e.preventDefault();const action=b.dataset.adminNav;if(dialog.open){if(action===currentAction)return;nextDestination=action;askClose();}else if(action==='tools')location.href='seller.html';else openEditor(action);};
  el('storefrontNew').onclick=()=>openEditor('new');el('storefrontShowDrafts').onclick=drafts;
  el('storefrontDraftCards').onclick=e=>{const b=e.target.closest('[data-admin-resume]');if(b)openEditor('resume',b.dataset.adminResume);};
  el('binderGrid').addEventListener('click',e=>{const b=e.target.closest('[data-admin-edit]');if(b)openEditor('edit',b.dataset.adminEdit);});

@@ -10,7 +10,7 @@
   if(started||!sellerSignedIn||sellerEl('onlineSellerMain').hidden)return;
   started=true;
   const action=params.get('action'),id=params.get('id');
-  if(action==='new')sellerEl('newListing').click();
+  if(action==='new'||action==='scan'){sellerEl('newListing').click();if(action==='scan')sellerEl('guidedEditor').dispatchEvent(new Event('scan-entry'));}
   else if(action==='resume'){
    const button=Array.from(document.querySelectorAll('[data-resume]')).find(b=>b.dataset.resume===id);
    if(button)button.click();else send('bindr-editor-closed');
