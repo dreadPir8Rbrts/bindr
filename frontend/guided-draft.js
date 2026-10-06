@@ -2,7 +2,7 @@
 // Serial, versioned writes. A lost response is reconciled before retrying it.
 class GuidedDraft {
  constructor(card,api,onSaved=()=>{}){this.card=structuredClone(card);this.api=api;this.onSaved=onSaved;this.saved=card.version?this.signature(card):null;this.pending=null;this.running=null;}
- signature(card){return JSON.stringify(['name','set','price','condition','description','photos','photoRoles','catalogCardId','status'].map(k=>['name','set','description'].includes(k)?(card[k]||'').trim():card[k]??null));}
+ signature(card){return JSON.stringify(['name','set','price','condition','description','photos','photoRoles','catalogCardId','status','sold','photoFrames'].map(k=>['name','set','description'].includes(k)?(card[k]||'').trim():k==='sold'?!!card[k]:k==='photoFrames'?Object.entries(card[k]||{}).sort(([a],[b])=>a.localeCompare(b)):card[k]??null));}
  get dirty(){return !!this.pending||this.signature(this.card)!==this.saved;}
  async reconcile(){
   const data=await this.api('listings'),remote=data.cards.find(c=>c.id===this.card.id),attempt=this.pending;

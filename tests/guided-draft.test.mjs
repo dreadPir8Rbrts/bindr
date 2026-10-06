@@ -24,3 +24,10 @@ test('publishes with front only and retries a lost publication response safely',
 test('failed request that never committed retries with the existing version',async()=>{
  const s=server();let offline=true;const d=new Draft(card(),(...args)=>{if(args[1]&&offline){offline=false;throw Error('Offline');}return s.api(...args);});await assert.rejects(d.save());await d.save();assert.equal(s.writes.length,1);
 });
+
+test('editing availability and photo framing persists without republishing a sold listing',async()=>{
+ const s=server(),c={...card(),status:'sold',sold:true,version:1};s.remote=structuredClone(c);
+ const d=new Draft(c,s.api);d.card.price=12;d.card.photoFrames={'front.jpg':{x:0,y:0,w:1,h:1}};
+ await d.save();assert.equal(s.remote.sold,true);assert.equal(s.remote.status,'sold');
+ d.card.sold=false;d.card.status='available';await d.save();assert.equal(s.remote.sold,false);assert.equal(s.writes.length,2);
+});

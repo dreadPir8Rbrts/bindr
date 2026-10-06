@@ -23,3 +23,13 @@
 
 .storefront-drafts-page{min-height:65dvh;padding:20px 0 32px}.storefront-drafts-page[hidden]{display:none!important}.storefront-drafts-page>header{display:flex;justify-content:space-between;gap:12px}.storefront-drafts-page>p{color:var(--muted)}.storefront-drafts-page #storefrontDraftCards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}.storefront-drafts-page #storefrontDraftCards button{padding:20px;min-height:80px;background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow-wrap:anywhere}
 @media(max-width:700px){.storefront-admin-actions{display:none}.storefront-admin-tools{padding:0;border:0;background:transparent;margin:0}.storefront-admin-tools:has(#storefrontAdminStatus:empty){display:none}.storefront-drafts-page #storefrontDraftCards{grid-template-columns:1fr}}
+
+/* Horizontal gestures reveal deletion while vertical gestures keep scrolling the page. */
+.draft-swipe-row{position:relative;overflow:hidden;border-radius:12px;min-width:0}
+.draft-swipe-front{position:relative;display:flex;background:var(--panel);border-radius:12px;transition:transform .18s ease;touch-action:pan-y}
+.draft-swipe-row.is-dragging .draft-swipe-front{transition:none;user-select:none}
+.storefront-drafts-page #storefrontDraftCards .draft-swipe-front [data-admin-resume]{flex:1;min-width:0;border-radius:12px 0 0 12px}
+.storefront-drafts-page #storefrontDraftCards .draft-actions{flex:0 0 48px;padding:8px;text-align:center;font-size:24px;border-radius:0 12px 12px 0}
+.storefront-drafts-page #storefrontDraftCards .draft-delete{position:absolute;inset:0 0 0 auto;width:96px;padding:12px;background:#a52222;color:#fff;border:0;border-radius:0;text-align:center}
+.storefront-drafts-page #storefrontDraftCards .draft-delete[hidden]{display:none}
+@media(prefers-reduced-motion:reduce){.draft-swipe-front{transition:none}}

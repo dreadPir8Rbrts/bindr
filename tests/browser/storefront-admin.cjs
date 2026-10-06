@@ -6,7 +6,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
  try{
  for(const role of ['anonymous','buyer','seller']){
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-  let currentRole=role,privateReads=0,revision=1,scanCalls=0,sessionChecks=0,sellerPages=0,expireScan=false;
+  let currentRole=role,privateReads=0,revision=1,scanCalls=0,sessionChecks=0,sellerPages=0,expireScan=false,deleteCalls=0;
   const base={...JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../inventory.json'))).cards[0],status:'available',sold:false,version:1};
   base.photoRoles=base.photos.map((_,i)=>i===0?'front':'detail');
   let cards=[base,{...base,id:'c900',name:'Private draft',status:'draft'}];const errors=[];
@@ -27,6 +27,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
     if(p.endsWith('/scan')){scanCalls++;return route.fulfill({json:scanCalls===1?{status:'no_match'}:{status:'matched',card:{id:'00000000-0000-4000-8000-000000000001',name:'Pikachu',set:'Base Set · 58/102 · Common',image_url:'images/full/c1_1.jpg'},confidence:.99}});}
     if(p.includes('/listings')){
      privateReads++;
+     if(req.method()==='DELETE'){deleteCalls++;const id=p.split('/').pop(),version=Number(new URL(req.url()).searchParams.get('version'));const card=cards.find(c=>c.id===id);if(card?.version!==version)return route.fulfill({status:409,json:{detail:'Stale version'}});cards=cards.filter(c=>c.id!==id);revision++;}
      if(req.method()==='PUT'){const c=req.postDataJSON().card;const previous=cards.find(x=>x.id===c.id);if(c.version!==previous?.version)return route.fulfill({status:409,json:{detail:'Stale version'}});cards=cards.filter(x=>x.id!==c.id);cards.push({...c,version:(previous?.version||0)+1});revision++;}
      return route.fulfill({json:{cards,revision}});
     }
@@ -59,7 +60,15 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await editor.locator('#guidedPrevious').click();await editor.locator('#guidedCatalogQuery').waitFor();
    await editor.locator('.catalog-result').click();await editor.locator('#guidedExit').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.length,3);
    await page.click('[data-admin-nav="drafts"]');await page.click('[data-admin-resume="c900"]');await editor.locator('#guidedEditor').waitFor();await editor.locator('#guidedNext').click();await editor.locator('#guidedPrice').fill('32');await editor.locator('#guidedPublish').click();await editor.locator('#guidedSuccess').waitFor();await editor.locator('#guidedDone').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.click('#storefrontDraftBack');await page.locator('#binderGrid [data-card="c900"]').waitFor();
-   await page.click('[data-admin-edit="c900"]');await page.frameLocator('#storefrontEditorFrame').locator('#sellerEditor').waitFor();await page.frameLocator('#storefrontEditorFrame').locator('#sellerPrice').fill('45');await page.frameLocator('#storefrontEditorFrame').locator('#sellerSaveLabel').click();await page.locator('#storefrontEditor').waitFor({state:'hidden'});await page.waitForFunction(()=>document.querySelector('#binderGrid [data-card="c900"] .price').textContent.includes('45'));
+   const beforeEdit={sessionChecks,sellerPages},editRevision=revision;
+   await page.click('[data-admin-edit="c900"]');await editor.locator('[data-guided-step="5"]').waitFor();assert.deepEqual({sessionChecks,sellerPages},beforeEdit);
+   await editor.locator('#guidedPrice').fill('45');await editor.locator('#guidedNext').click();await editor.locator('[data-guided-step="6"]').waitFor();assert.equal(revision,editRevision);
+   await editor.getByRole('button',{name:'Save changes',exact:true}).click();await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.waitForFunction(()=>document.querySelector('#binderGrid [data-card="c900"] .price').textContent.includes('45'));
+   // Closing an edited listing discards changes only after confirmation.
+   await page.click('[data-admin-edit="c900"]');await editor.locator('#guidedPrice').fill('99');page.once('dialog',d=>d.accept());await editor.locator('#guidedExit').click();await editor.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.find(c=>c.id==='c900').price,45);
+   // A sold listing stays sold unless availability is explicitly changed.
+   cards.find(c=>c.id==='c900').sold=true;cards.find(c=>c.id==='c900').status='sold';
+   await page.click('[data-admin-edit="c900"]');await editor.locator('#guidedPrice').fill('46');await editor.locator('#guidedNext').click();await editor.locator('#guidedPublish').click();await editor.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.find(c=>c.id==='c900').sold,true);assert.equal(cards.find(c=>c.id==='c900').status,'sold');assert.deepEqual({sessionChecks,sellerPages},beforeEdit);
    const beforeOpen={sessionChecks,sellerPages,privateReads};await page.click('[data-admin-nav="scan"]');await editor.locator('#guidedScanIntro').waitFor();assert.deepEqual({sessionChecks,sellerPages,privateReads},beforeOpen);
    assert.equal(await editor.locator('#guidedScanCamera').getAttribute('capture'),'environment');
    await page.screenshot({path:'/tmp/bindr-scan-start.png'});
@@ -90,6 +99,26 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await editor.locator('#guidedPrevious').click();await editor.locator('[data-guided-step="5"]').waitFor();assert.equal(await editor.locator('#guidedPrice').inputValue(),'20');
    await editor.locator('#guidedNext').click();await editor.locator('#guidedPublish').click();await editor.locator('#guidedSuccess').waitFor();await editor.locator('#guidedDone').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});
    await page.click('[data-admin-nav="scan"]');await editor.locator('#guidedScanIntro').waitFor();await page.click('[data-admin-nav="drafts"]');await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.locator('#storefrontDrafts').waitFor();
+   cards.push({...base,id:'c901',name:'Swipe test',status:'draft'});await page.click('#storefrontDraftRefresh');
+   const swipeRow=page.locator('.draft-swipe-row').filter({has:page.locator('[data-admin-resume="c901"]')});await swipeRow.waitFor();
+   const box=await swipeRow.boundingBox(),touch=await context.newCDPSession(page);
+   const point={x:box.x+box.width-90,y:box.y+30};
+   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+   await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x,y:point.y-40}]});
+   await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});assert.equal(await swipeRow.locator('.draft-delete').isVisible(),false);
+   await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
+   for(let dx=15;dx<=120;dx+=15)await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x-dx,y:point.y}]});
+   await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+   await swipeRow.locator('.draft-delete').waitFor();assert.equal(await page.locator('#guidedEditor').isVisible(),false);assert.equal(deleteCalls,0);
+   await page.screenshot({path:'/tmp/bindr-draft-swipe.png'});
+   page.once('dialog',d=>d.dismiss());await swipeRow.locator('.draft-delete').click();assert.equal(deleteCalls,0);
+   await swipeRow.locator('.draft-actions').focus();await page.keyboard.press('Escape');assert.equal(await swipeRow.locator('.draft-delete').isVisible(),false);
+   await page.keyboard.press('Enter');await swipeRow.locator('.draft-delete').waitFor();
+   cards.find(c=>c.id==='c901').version=2;page.once('dialog',d=>d.accept());await swipeRow.locator('.draft-delete').click();
+   await page.waitForFunction(()=>document.querySelector('#storefrontDraftStatus').textContent.includes('Stale version'));assert.ok(cards.some(c=>c.id==='c901'));
+   await page.click('#storefrontDraftRefresh');await swipeRow.waitFor();await swipeRow.locator('.draft-actions').click();
+   const beforeDelete={sessionChecks,sellerPages};page.once('dialog',d=>d.accept());await swipeRow.locator('.draft-delete').click();await swipeRow.waitFor({state:'detached'});
+   assert.equal(cards.some(c=>c.id==='c901'),false);assert.deepEqual({sessionChecks,sellerPages},beforeDelete);
    const savedCards=cards;cards=cards.filter(c=>c.status!=='draft');await page.click('#storefrontDraftRefresh');await page.waitForFunction(()=>document.querySelector('#storefrontDraftStatus').textContent.startsWith('No private drafts'));assert.equal(await page.locator('[data-admin-resume]').count(),0);cards=savedCards;
    await page.click('#buyerMode');assert.equal(await page.locator('#adminMobileNav').isVisible(),false);assert.equal(await page.locator('[data-admin-edit]').count(),0);assert.equal(await page.locator('#storefrontDrafts').isVisible(),false);
    await page.click('#adminMode');await page.locator('[data-admin-nav="new"]').waitFor();await page.click('#storefrontSignOut');await page.locator('#storefrontMode').waitFor({state:'hidden'});assert.equal(await page.locator('[data-admin-edit]').count(),0);
