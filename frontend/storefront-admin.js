@@ -48,7 +48,7 @@
   try{const data=await api('listings');if(request!==draftRequest||!authorized||!adminMode||!draftsVisible)return;
    const cards=data.cards.filter(c=>c.status==='draft');el('storefrontDraftCards').replaceChildren();
    for(const c of cards)el('storefrontDraftCards').appendChild(draftRow(c));
-   el('storefrontDraftStatus').textContent=cards.length?'Private drafts are saved online. Swipe left or use Draft actions to delete.':'No private drafts yet. Create a new listing to start.';
+   el('storefrontDraftStatus').textContent=cards.length?'Swipe left or tap ••• for draft actions.':'No private drafts yet. Create a new listing to start.';
   }catch(e){if(request===draftRequest)el('storefrontDraftStatus').textContent=e.message+' Use Refresh drafts to retry.';}
  }
  function draftRow(card){
@@ -56,7 +56,8 @@
   const remove=document.createElement('button');remove.type='button';remove.className='draft-delete';remove.textContent='Delete';remove.hidden=true;remove.id='delete-draft-'+card.id;
   remove.setAttribute('aria-label','Delete '+(card.name||'Untitled card'));
   const front=document.createElement('div');front.className='draft-swipe-front';
-  const resume=document.createElement('button');resume.type='button';resume.dataset.adminResume=card.id;resume.textContent=(card.name||'Untitled card')+' · '+card.photos.length+' photos · Resume';
+  const resume=document.createElement('button');resume.type='button';resume.dataset.adminResume=card.id;const summary=document.createElement('span');summary.className='draft-summary';const title=document.createElement('strong');title.textContent=card.name||'Untitled card';const meta=document.createElement('small');meta.textContent=card.photos.length+' photo'+(card.photos.length===1?'':'s')+' · Continue editing';summary.append(title,meta);
+  if(card.photos[0]){const image=document.createElement('img');image.src=card.thumb||card.photos[0];image.alt='';image.loading='lazy';resume.appendChild(image);}else{const placeholder=document.createElement('span');placeholder.className='draft-photo-placeholder';placeholder.textContent='◇';placeholder.setAttribute('aria-hidden','true');resume.appendChild(placeholder);}resume.appendChild(summary);
   const actions=document.createElement('button');actions.type='button';actions.className='draft-actions';actions.textContent='⋯';actions.setAttribute('aria-label','Draft actions for '+(card.name||'Untitled card'));actions.setAttribute('aria-controls',remove.id);
   let opened=false,gesture=null,suppressUntil=0,deleting=false;
   function reveal(value){opened=value;front.style.transform=value?'translateX(-96px)':'';remove.hidden=!value;actions.setAttribute('aria-expanded',String(value));row.classList.toggle('is-open',value);}

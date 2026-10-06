@@ -5,7 +5,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
  const browser=await chromium.launch({...(process.env.CHROME_PATH?{executablePath:process.env.CHROME_PATH}:{}),headless:true});
  try{
  for(const role of ['anonymous','buyer','seller']){
-  const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
+  const context=await browser.newContext({viewport:{width:Number(process.env.MOBILE_WIDTH||390),height:Number(process.env.MOBILE_HEIGHT||844)},isMobile:true,hasTouch:true});
   let currentRole=role,privateReads=0,revision=1,scanCalls=0,sessionChecks=0,sellerPages=0,expireScan=false,deleteCalls=0,scanGate=null;
   const base={...JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../inventory.json'))).cards[0],status:'available',sold:false,version:1};
   base.photoRoles=base.photos.map((_,i)=>i===0?'front':'detail');
@@ -41,20 +41,20 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
   if(role!=='seller'){
    assert.equal(await page.locator('#storefrontMode').isVisible(),false);assert.equal(await page.locator('[data-admin-edit]').count(),0);assert.equal(privateReads,0);
    if(role==='anonymous'){
-    await page.click('#storefrontLoginLink');await page.fill('#storefrontEmail','seller@example.test');await page.fill('#storefrontPassword','test-password');await page.click('#storefrontLoginSubmit');await page.locator('#storefrontMode').waitFor();assert.equal(await page.locator('#storefrontAdminTools').isVisible(),false);
+    await page.click('#storefrontLoginLink');await page.screenshot({path:'/tmp/bindr-mobile-login.png'});assert.equal(await page.locator('#storefrontLogin').evaluate(e=>e.scrollWidth<=e.clientWidth),true);await page.fill('#storefrontEmail','seller@example.test');await page.fill('#storefrontPassword','test-password');await page.click('#storefrontLoginSubmit');await page.locator('#storefrontMode').waitFor();assert.equal(await page.locator('#storefrontAdminTools').isVisible(),false);
    }
   }else{
    await page.locator('#storefrontMode').waitFor();assert.equal(await page.locator('#storefrontAdminTools').isVisible(),false);
    await page.click('#adminMode');await page.locator('[data-admin-edit]').first().waitFor();
    assert.equal(await page.locator('#storefrontDrafts').isVisible(),false);assert.equal(await page.getByText('Seller tools',{exact:true}).count(),0);
    const beforeDrafts={sessionChecks,sellerPages};await page.click('[data-admin-nav="drafts"]');await page.locator('[data-admin-resume="c900"]').waitFor();assert.deepEqual({sessionChecks,sellerPages},beforeDrafts);assert.equal(await page.locator('#catalog').isVisible(),false);
-   await page.screenshot({path:'/tmp/bindr-drafts-page.png'});
+   await page.screenshot({path:'/tmp/bindr-drafts-page.png'});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
    await page.click('#storefrontDraftBack');assert.equal(await page.locator('#catalog').isVisible(),true);
    assert.equal(await page.locator('#binderGrid').getByText('Private draft').count(),0);
    await page.reload();await page.locator('[data-admin-nav="new"]').waitFor();await page.screenshot({path:'/tmp/bindr-storefront-admin-mobile.png',fullPage:true});
    const beforeNew={sessionChecks,sellerPages};await page.click('[data-admin-nav="new"]');assert.deepEqual({sessionChecks,sellerPages},beforeNew);const editor=page;await editor.locator('#guidedEditor').waitFor();
    await editor.locator('#guidedCatalogQuery').fill('Pikachu 58/102');await editor.locator('.catalog-result').waitFor();
-   await page.screenshot({path:'/tmp/bindr-catalog-search.png'});
+   await page.screenshot({path:'/tmp/bindr-catalog-search.png'});assert.equal(await editor.locator('.guided-body').evaluate(e=>e.scrollWidth<=e.clientWidth),true);
    await editor.locator('.catalog-result').click();await editor.locator('[data-guided-step="5"]').waitFor();
    assert.equal(await editor.locator('#guidedName').inputValue(),'Pikachu');assert.equal(await editor.locator('#guidedSet').inputValue(),'Base Set · 58/102 · Common');assert.deepEqual({sessionChecks,sellerPages},beforeNew);
    await editor.locator('#guidedPrevious').click();await editor.locator('#guidedCatalogQuery').waitFor();
@@ -115,7 +115,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await page.click('[data-admin-nav="scan"]');await editor.locator('#guidedScanIntro').waitFor();await page.click('[data-admin-nav="drafts"]');await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.locator('#storefrontDrafts').waitFor();
    const deletesBeforeSwipe=deleteCalls;cards.push({...base,id:'c901',name:'Swipe test',status:'draft'});await page.click('#storefrontDraftRefresh');
    const swipeRow=page.locator('.draft-swipe-row').filter({has:page.locator('[data-admin-resume="c901"]')});await swipeRow.waitFor();
-   const box=await swipeRow.boundingBox(),touch=await context.newCDPSession(page);
+   await swipeRow.scrollIntoViewIfNeeded();const box=await swipeRow.boundingBox(),touch=await context.newCDPSession(page);
    const point={x:box.x+box.width-90,y:box.y+30};
    await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
    await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x,y:point.y-40}]});

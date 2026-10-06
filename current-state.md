@@ -27,6 +27,10 @@ The app is partway through a migration **from** Netlify (static site + one Netli
 
 Draft rows in the storefront support swiping left to reveal Delete, or using the accessible Draft actions button. Deletion requires confirmation and uses the existing version-checked seller API; swiping alone never deletes a draft. Successful deletion removes only that row without reloading or hiding the remaining drafts.
 
+## Mobile admin styling
+
+The storefront admin uses the existing binder palette with a padded sign-in dialog, compact mode selector, slimmer bottom navigation, thumbnail draft rows, and consistent guided-editor inputs and actions. Touch targets remain at least 44px for the main admin controls.
+
 ## Storefront Add listing
 
 Add listing now opens catalog search inside the storefront using its existing authorized API client. Search by card name, number, or set (including combinations); selecting a result prefills the guided details form, followed by listing photos, preview, and publication. Manual entry remains available. New listing flows offer Exit without saving alongside Save & exit; exiting without saving discards any autosaved draft created by that flow, with version checks protecting edits made elsewhere. The seller-only `GET /api/v1/catalog/search?q=...` reads the Pokémon catalog and returns up to 25 matches; it does not upload photos or create listings.
