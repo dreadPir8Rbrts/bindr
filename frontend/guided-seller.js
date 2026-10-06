@@ -21,7 +21,7 @@ function renderGuidedDrafts(){
  const el=sellerEl;let step=0,busy=false,scanning=false,candidate=null,timer=null,generation=0,publishing=false,automaticDescription=true;
  function applyInventory(data){inventory=structuredClone(data.cards);onlineRevision=data.revision;originalInventory.clear();inventory.forEach(c=>originalInventory.set(c.id,JSON.stringify(c)));sellerList();}
  function error(e){el('guidedError').textContent=e?.message||'';}
- function lock(){dialog.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=busy||publishing);el('guidedScan').disabled=busy||publishing||scanning;}
+ function lock(){dialog.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=busy||publishing);el('guidedScan').disabled=busy||publishing||scanning;el('guidedExit').textContent=busy?'Working…':publishing?'Publication needs retry':'Save & exit';dialog.setAttribute('aria-busy',String(busy));}
  function releaseCandidate(){if(candidate?.url)URL.revokeObjectURL(candidate.url);candidate=null;el('guidedCandidate').hidden=true;}
  function render(){
   const c=guidedSession.card;
@@ -50,7 +50,7 @@ function renderGuidedDrafts(){
   el('guidedSuccess').hidden=true;el('guidedNavigation').hidden=false;el('guidedSteps').hidden=false;el('guidedExit').hidden=false;error();render();if(!dialog.open)dialog.showModal();
  }
  function fresh(){open({id:'c'+(Date.now()*1000+crypto.getRandomValues(new Uint16Array(1))[0]%1000),name:'',set:'',price:0,condition:'Near Mint',description:'',photos:[],photoRoles:[],thumb:'',catalogCardId:null,status:'draft',sold:false});}
- async function exit(){if(busy||publishing)return;if(candidate){error(Error('Use this photo or choose another before leaving.'));return;}busy=true;lock();if(await save()){generation++;dialog.close();guidedSession=null;}busy=false;lock();}
+ async function exit(){if(busy||publishing)return;if(candidate){await usePhoto(false);if(candidate)return;}busy=true;lock();if(await save()){generation++;dialog.close();guidedSession=null;}busy=false;lock();}
  async function pick(file,role){
   if(!file||busy||publishing)return;if(candidate?.attached){error(Error('Retry saving the current photo first.'));return;}releaseCandidate();busy=true;lock();error();const token=generation;
   try{const prepared=await prepareSellerPhoto(file,s=>el('guidedPhotoStatus').textContent=s);if(token!==generation)return;candidate={blob:prepared.blob,role,url:URL.createObjectURL(prepared.blob)};el('guidedCandidateImage').src=candidate.url;el('guidedCandidate').hidden=false;el('guidedUsePhoto').textContent='Use photo';el('guidedPhotoStatus').textContent='Check focus and glare before using this photo.';}
@@ -67,7 +67,7 @@ function renderGuidedDrafts(){
   }catch(e){if(token===generation)el('guidedScanStatus').textContent=e.message+' You can enter details manually.';}
   finally{if(token===generation){scanning=false;lock();}}
  }
- async function usePhoto(){
+ async function usePhoto(scanAfter=true){
   if(!candidate||busy)return;busy=true;lock();error();
   try{
    const c=guidedSession.card,p=candidate;
@@ -82,12 +82,12 @@ function renderGuidedDrafts(){
    }
    if(!await save())return;
    const blob=p.blob,front=p.role==='front';releaseCandidate();el('guidedPhotoStatus').textContent='Photo saved online.';
-   if(front){step=1;generation++;scan(blob);}render();
+   if(front){step=1;generation++;if(scanAfter)scan(blob);}render();
   }catch(e){error(e);el('guidedPhotoStatus').textContent='Photo was not confirmed. Retry Use photo.';}
   finally{busy=false;lock();}
  }
  for(const [id,role] of [['guidedCamera','front'],['guidedLibrary','front'],['guidedBackCamera','back'],['guidedBack','back'],['guidedDetail','detail']])el(id).onchange=e=>{const file=e.target.files?.[0];e.target.value='';pick(file,role);};
- el('guidedUsePhoto').onclick=usePhoto;
+ el('guidedUsePhoto').onclick=()=>usePhoto();
  el('guidedRetake').onclick=()=>{if(candidate?.attached){error(Error('Retry saving this photo before replacing it.'));return;}releaseCandidate();el('guidedPhotoStatus').textContent='Take or choose another photo.';};
  for(const [id,key] of [['guidedName','name'],['guidedSet','set'],['guidedPrice','price'],['guidedCondition','condition'],['guidedDescription','description']])el(id).oninput=()=>{if(key==='description')automaticDescription=false;guidedSession.card[key]=key==='price'?Number(el(id).value):el(id).value;if(key==='name'||key==='set')guidedSession.card.catalogCardId=null;render();schedule();};
  el('guidedPhotos').onclick=async e=>{const b=e.target.closest('[data-remove-photo]');if(!b||busy)return;const i=Number(b.dataset.removePhoto);guidedSession.card.photos.splice(i,1);guidedSession.card.photoRoles.splice(i,1);render();schedule();};
