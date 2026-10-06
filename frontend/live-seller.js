@@ -15,7 +15,7 @@ async function enterSellerBinder(){sellerSignedIn=true;if(!sellerEl('sellerEdito
 sellerEl('loginForm').onsubmit=async e=>{e.preventDefault();const b=sellerEl('sellerLogin');b.disabled=true;sellerEl('loginStatus').textContent='';try{await sellerAuth.signIn(sellerEl('sellerEmail').value.trim(),sellerEl('sellerPassword').value);sellerEl('sellerPassword').value='';try{await sellerAPI('session');}catch(e){await sellerAuth.signOut();throw e;}await enterSellerBinder();}catch(e){sellerEl('loginStatus').textContent=e.message;}finally{b.disabled=false;}};
 sellerEl('reloadInventory').onclick=async()=>{if(onlineBusy)return;if(dirty&&!confirm('Discard unsaved edits and reload live inventory?'))return;try{await loadOnlineSeller();sellerEl('sellerUndo').hidden=true;sellerMessage('Latest inventory loaded.');}catch(e){sellerMessage(e.message);}};
 sellerEl('logoutSeller').onclick=async()=>{if(dirty&&!confirm('Discard unsaved edits and sign out?'))return;try{await sellerAuth.signOut();dirty=false;location.reload();}catch(e){sellerMessage(e.message);}};
-(async()=>{try{if(!await sellerAuth.accessToken())return;await sellerAPI('session');await enterSellerBinder();}catch(e){sellerEl('loginStatus').textContent=e.message;}})();
+(async()=>{try{if(!await sellerAuth.accessToken())return;await sellerAPI('session');await enterSellerBinder();}catch(e){sellerEl('loginStatus').textContent=e.message;}finally{const loading=sellerEl('sellerSessionLoading');if(loading)loading.hidden=true;sellerEl('sellerAuth').hidden=!sellerEl('onlineSellerMain').hidden;}})();
 
 
 sellerEl('deleteSellerListing').onclick=async()=>{

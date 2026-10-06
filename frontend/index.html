@@ -12,7 +12,7 @@
 <script src="dialog-history.js" defer></script>
 <script src="binder-tools.js" defer></script>
 <script src="live-binder.js" defer></script>
-<link rel="stylesheet" href="storefront-admin.css"><script src="vendor/supabase-js-2.117.2.js" defer></script><script src="seller-auth.js" defer></script><script src="storefront-admin.js" defer></script>
+<link rel="stylesheet" href="storefront-admin.css"><script src="vendor/supabase-js-2.117.2.js" defer></script><script src="seller-auth.js" defer></script><link rel="stylesheet" href="guided-seller.css"><script src="photo-preparation.js" defer></script><script src="photo-transfer.js" defer></script><script src="description-builder.js" defer></script><script src="guided-draft.js" defer></script><script src="guided-editor.js" defer></script><script src="storefront-admin.js" defer></script>
 </head>
 <body data-binder-theme="navy">
 <a class="skip" href="#catalog">Skip to cards</a>
@@ -22,7 +22,8 @@
  <nav aria-label="Shop"><button id="aboutBtn" class="quiet">How to buy</button><button id="headerLot" class="primary">Your lot <span id="lotCount">0</span></button></nav>
 </header>
 <div id="storefrontMode" class="storefront-mode" hidden><span>View binder as</span><div role="group" aria-label="Binder mode"><button id="buyerMode" type="button" aria-pressed="true">Buyer mode</button><button id="adminMode" type="button" aria-pressed="false">Admin mode</button></div></div>
-<section id="storefrontAdminTools" class="storefront-admin-tools" hidden><div class="storefront-admin-actions"><button id="storefrontNew" class="primary">+ New listing</button><button id="storefrontScan" class="storefront-desktop-scan">Scan</button><button id="storefrontShowDrafts">Drafts</button><a href="seller.html">Seller tools</a></div><p id="storefrontAdminStatus" role="status"></p><section id="storefrontDrafts" hidden><h2>Continue a private draft</h2><div id="storefrontDraftCards"></div></section></section>
+<section id="storefrontAdminTools" class="storefront-admin-tools" hidden><div class="storefront-admin-actions"><button id="storefrontNew" class="primary">+ New listing</button><button id="storefrontScan" class="storefront-desktop-scan">Scan</button><button id="storefrontShowDrafts">Drafts</button></div><p id="storefrontAdminStatus" role="status"></p></section>
+<section id="storefrontDrafts" class="storefront-drafts-page" aria-labelledby="storefrontDraftTitle" hidden><header><button id="storefrontDraftBack" type="button">← Back to binder</button><button id="storefrontDraftRefresh" type="button">Refresh drafts</button></header><h1 id="storefrontDraftTitle" tabindex="-1">Your drafts</h1><p>Private listings saved online. Choose a draft to continue editing.</p><p id="storefrontDraftStatus" role="status"></p><div id="storefrontDraftCards"></div></section>
 <main id="catalog"><p id="liveStatus" role="status">Loading live inventory…</p>
  <span id="availableCount" hidden></span><section class="cover"><div class="cover-inner"><div class="avatar avatar-photo"><img src="assets/profile-gengar-full.png" alt="PokémonHooper’s profile: Gengar playing basketball" width="1069" height="1147"></div><div><h1>PokémonHooper’s binder</h1></div></div>
  <aside class="seller-strip" aria-label="Seller references"><div><strong>Know your seller.</strong><span>Check my reviews &amp; past sales</span></div><div class="seller-platforms"><a href="https://ebay.io/m/OLaYJ3" target="_blank" rel="noopener" class="platform-ebay">eBay ↗</a><a href="https://www.whatnot.com/s/9KcMav5T" target="_blank" rel="noopener" class="platform-whatnot">Whatnot ↗</a><a href="https://www.facebook.com/marketplace/profile/100020652287786/?ref=permalink&amp;mibextid=6ojiHh" target="_blank" rel="noopener" class="platform-facebook">Facebook ↗</a><a href="https://instagram.com/pokemonhooper" target="_blank" rel="noopener" class="platform-instagram">Instagram ↗</a></div></aside>
@@ -47,7 +48,7 @@
  <div id="activeFilters" class="active-filters" aria-label="Active filters"></div>
  <section class="binder-page" aria-label="Card sleeves"><div class="heritage-spine" aria-hidden="true"><i></i><i></i><i></i></div><div class="page-label"><span>THE OPEN BINDER</span><span>Pick a pocket. Find a keeper.</span></div><div class="binder" id="binderGrid"></div></section>
 </main>
-<footer><p>Build a lot here. Confirm availability, shipping cost and payment in Instagram DMs.</p><a href="https://instagram.com/pokemonhooper" target="_blank" rel="noopener">@pokemonhooper ↗</a><p class="small">Prices and availability may change. Adding a card to your lot does not reserve it.</p><button id="storefrontLoginLink" class="quiet">Seller sign in</button><button id="storefrontSignOut" data-storefront-admin hidden>Sign out</button></footer>
+<footer id="storefrontFooter"><p>Build a lot here. Confirm availability, shipping cost and payment in Instagram DMs.</p><a href="https://instagram.com/pokemonhooper" target="_blank" rel="noopener">@pokemonhooper ↗</a><p class="small">Prices and availability may change. Adding a card to your lot does not reserve it.</p><button id="storefrontLoginLink" class="quiet">Seller sign in</button><button id="storefrontSignOut" data-storefront-admin hidden>Sign out</button></footer>
 </div>
 <div id="lotDock" class="lot-dock" hidden><div id="dockThumbs" class="dock-thumbs" aria-hidden="true"></div><div class="dock-copy"><strong id="dockTotal"></strong><span id="dockCount"></span></div><button id="reviewLot" class="primary">Review your lot →</button></div>
 <dialog id="cardDialog" class="card-dialog" aria-labelledby="cardTitle"></dialog>
@@ -63,7 +64,7 @@
 <nav id="adminMobileNav" class="admin-mobile-nav" aria-label="Admin navigation" hidden>
 <button type="button" data-admin-nav="new"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg><span>Add listing</span></button>
 <button type="button" data-admin-nav="scan" class="admin-nav-scan"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5l2-2h4l2 2h4v15H4V5z"/><circle cx="12" cy="12" r="4"/></svg><span>Scan</span></button>
-<a href="seller.html" data-admin-nav="tools"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16v14H4zM9 7V3h6v4M4 12h16M10 12v3h4v-3"/></svg><span>Seller tools</span></a>
+<button type="button" data-admin-nav="drafts"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h6"/></svg><span>Drafts</span></button>
 </nav>
 </body>
 </html>

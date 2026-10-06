@@ -9,7 +9,7 @@ function scanPhotoSource(){const i=workingRoles.indexOf('front');return workingP
 function refreshScanButton(){const b=sellerEl('scanFrontPhoto');b.disabled=scanBusy||!scanPhotoSource();b.textContent=workingRoles.includes('front')?'Scan front photo':'Scan first photo';sellerEl('scanNewPhoto').disabled=scanBusy;}
 function clearScan(){scanOffers=[];sellerEl('scanResults').innerHTML='';scanStatus('');}
 // OCR reads text fine at 800px; a smaller upload keeps scans quick on phone data.
-async function scanJpeg(blob){const img=await readPhotoImage(blob);try{const size=BinderPhotoPreparation.fitPhoto(img.width,img.height,SCAN_EDGE),canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size.width,size.height);ctx.drawImage(img.source,0,0,size.width,size.height);return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Could not prepare this photo for scanning.')),'image/jpeg',SCAN_QUALITY));}finally{img.close();}}
+
 function scanOffer(c,i,label){return `<div class="scan-offer">${c.image_url?`<img src="${sellerEsc(c.image_url)}" alt="" width="60" height="84" loading="lazy" referrerpolicy="no-referrer">`:'<span class="scan-offer-blank" aria-hidden="true"></span>'}<div><strong>${sellerEsc(c.name)}</strong><span>${sellerEsc(c.set)}</span></div><button type="button" data-scan-use="${i}">${label}</button></div>`;}
 function renderScan(result){
  const read=[result.ocr?.name,result.ocr?.set_number].filter(Boolean).map(x=>`“${sellerEsc(x)}”`).join(' · ');

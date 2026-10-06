@@ -6,7 +6,7 @@ function buildSellerDescription({name,set,condition,tags=[],notes=''}) {
  const details={'swirl':'Features a holo swirl.','holo-scratches':'Holo scratching is present.','surface-scratches':'Surface scratching is present.','edge-whitening':'Edge whitening is present.','corner-wear':'Corner wear is present.','crease':'A crease is present.'};
  return [`${name} from ${set}.`,`Listed as ${condition}.`,...[...new Set(tags)].filter(t=>details[t]).map(t=>details[t]),notes,'See the listing photos for this copy’s condition. Ask if you’d like a closer look at a specific area.'].filter(Boolean).join(' ');
 }
-if(typeof document!=='undefined')(()=>{
+if(typeof document!=='undefined'&&document.getElementById('sellerForm'))(()=>{
  const el=id=>document.getElementById(id);
  const reset=()=>{el('descriptionBuilder').open=false;el('descriptionNotes').value='';el('descriptionDraft').value='';el('descriptionPreview').hidden=true;el('descriptionDraftStatus').textContent='';document.querySelectorAll('[name="descriptionTag"]').forEach(x=>x.checked=false);};
  const oldLoad=loadSellerCard;loadSellerCard=function(id){oldLoad(id);reset();};
