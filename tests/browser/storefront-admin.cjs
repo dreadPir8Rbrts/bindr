@@ -106,7 +106,13 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await editor.locator('#guidedNext').click();assert.equal(await editor.locator('[data-guided-step="5"]').isVisible(),true);
    await editor.locator('#guidedPrice').fill('20');
    await page.evaluate(()=>{let shot=0;uploadSellerPhoto=async()=>({url:'images/full/c1_2.jpg?shot='+ ++shot});});
-   await editor.locator('#guidedDetail').setInputFiles(photo);await editor.locator('#guidedUsePhoto').click();await editor.locator('#guidedCandidate').waitFor({state:'hidden'});
+   await editor.locator('.guided-body').evaluate(e=>e.scrollTop=e.scrollHeight);
+   await editor.locator('#guidedDetail').setInputFiles(photo);
+   await page.waitForFunction(()=>document.activeElement?.id==='guidedUsePhoto');
+   const review=await page.evaluate(()=>{const rect=id=>document.getElementById(id).getBoundingClientRect(),a=rect('guidedUsePhoto'),b=rect('guidedRetake'),p=rect('guidedCandidate'),body=document.querySelector('.guided-body').getBoundingClientRect();return {visible:a.top>=body.top&&a.bottom<=body.bottom&&b.bottom<=body.bottom,widthDifference:Math.abs(a.width-b.width),gap:b.left-a.right,marginDifference:Math.abs((a.left-p.left)-(p.right-b.right))};});
+   assert.equal(review.visible,true);assert.ok(review.widthDifference<1);assert.ok(review.marginDifference<1);assert.ok(review.gap>=12);
+   await page.screenshot({path:'/tmp/bindr-photo-review.png'});
+   await editor.locator('#guidedUsePhoto').click();await editor.locator('#guidedCandidate').waitFor({state:'hidden'});
    assert.equal(await editor.locator('#guidedPhotos img').count(),1);
    assert.equal(await editor.locator('#guidedPhotoCamera').getAttribute('capture'),'environment');
    assert.equal(await editor.locator('#guidedDetailsHost .upload-picker').count(),2);

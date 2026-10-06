@@ -31,3 +31,8 @@
 .guided-editor #guidedDiscard:focus-visible{outline:2px solid var(--teal);outline-offset:4px;border-radius:4px}
 .guided-editor #guidedTitle:focus{outline:none}
 #guidedPhotoCount{font-size:12px;color:var(--muted)}
+
+.guided-photo-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.guided-editor .guided-photo-actions button{width:100%;min-width:0;margin:0;padding:12px 8px;white-space:normal;min-height:48px}
+.scan-entry .guided-photo-actions{grid-template-columns:1fr;margin-top:0;gap:12px}
+.scan-entry .guided-photo-actions #guidedUsePhoto,.scan-entry .guided-photo-actions #guidedRetake{margin:0}

@@ -290,3 +290,5 @@ Re-run during repository preparation on 2026-10-06: **159 backend tests and 55 N
 The guided Add Photos section uses Take Photo (native camera) and Choose Photo (library), adding one reviewed photo at a time up to six total. A counter shows capacity; removing a photo re-enables the pickers. Identification photos are never included. Exit without saving remains a text action beneath the editor heading, with keyboard focus styling.
 
 Photo uploads send the thumbnail and full photo concurrently, then confirm both before attaching them. The guided flow no longer waits for a draft save before uploading; it saves after attachment and shows transfer progress. Image size/quality and server validation are unchanged. Production timing has not yet been measured.
+
+After selecting a guided listing photo, the editor automatically scrolls to its review and focuses Use photo. The review actions have equal widths, a 12px gap, and matching outer insets; scan actions retain their stacked layout.
