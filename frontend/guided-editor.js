@@ -9,7 +9,7 @@ function createGuidedSeller(options){
  const sellerAPI=options.api;
  const uploadPhoto=(blob,progress)=>uploadSellerPhoto(blob,progress,sellerAPI);
  const dialog=document.createElement('dialog');dialog.id='guidedEditor';dialog.className='seller-editor guided-editor';dialog.setAttribute('aria-labelledby','guidedTitle');
- dialog.innerHTML=`<header class="dialog-head"><h2 id="guidedTitle">New listing</h2><button type="button" id="guidedExit">Save &amp; exit</button></header>
+ dialog.innerHTML=`<header class="dialog-head"><h2 id="guidedTitle">New listing</h2><button type="button" id="guidedDiscard" hidden>Exit without saving</button><button type="button" id="guidedExit">Save &amp; exit</button></header>
  <div class="guided-body"><ol id="guidedSteps" class="guided-steps">${['Front photo','Identify','More photos','Details & publish'].map(x=>`<li>${x}</li>`).join('')}</ol>
  <p id="guidedSave" role="status"></p><button id="guidedRetry" type="button" hidden>Retry saving</button>
  <section id="guidedScanIntro" hidden><div class="scan-intro-heading"><span class="scan-photo-badge">Photo scan</span><h3>Scan your card</h3><p>Take a clear photo of the front to identify your card.</p></div><label class="upload-picker scan-camera-picker">Open Camera to Take Photo<input id="guidedScanCamera" type="file" accept="image/*" capture="environment"></label><aside class="scan-photo-tips"><h4>Tips for best results</h4><ul><li>Keep the card name and number clearly visible</li><li>Include all four corners</li><li>Use even lighting and avoid glare</li><li>Hold steady for a sharp photo</li></ul></aside></section>
@@ -25,7 +25,7 @@ function createGuidedSeller(options){
  <p id="guidedError" role="alert"></p><footer id="guidedNavigation"><button id="guidedPrevious" type="button">Back</button><button id="guidedNext" class="primary" type="button">Continue</button><button id="guidedPublish" class="primary" type="button" hidden>Publish to binder</button></footer>
  <section id="guidedSuccess" hidden><h3>Your listing is live</h3><a id="guidedView">View listing</a><button id="guidedAnother" class="primary" type="button">Add another card</button><button id="guidedDone" type="button">Done</button></section></div>`;
  document.body.appendChild(dialog);
- let editEntry=false,searchEntry=false,searchTimer=null,searchRequest=0;
+ let discardAllowed=false,editEntry=false,searchEntry=false,searchTimer=null,searchRequest=0;
  const el=sellerEl;let step=0,busy=false,scanning=false,candidate=null,timer=null,generation=0,publishing=false,automaticDescription=true,scanEntry=false,identifiedCard=null,scanSource=null;
  // Move the shared fields, rather than maintaining two sets of draft inputs.
  const detailNodes=[el('guidedName').parentElement,el('guidedSet').parentElement,el('guidedCondition').closest('.seller-fields'),el('guidedDescription').parentElement,dialog.querySelector('[data-guided-step="2"]')];
@@ -41,20 +41,23 @@ function createGuidedSeller(options){
  function applyInventory(data){options.onSaved?.(data);}
 
  function error(e){el('guidedError').textContent=e?.message||'';}
- function lock(){dialog.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=busy||publishing);el('guidedScan').disabled=busy||publishing||scanning;el('guidedExit').textContent=busy?'Working…':publishing?'Save needs retry':editEntry?'Close':'Save & exit';dialog.setAttribute('aria-busy',String(busy));}
+ function lock(){dialog.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=busy||publishing);el('guidedScan').disabled=busy||publishing||scanning;el('guidedExit').textContent=busy?'Working…':publishing?'Save needs retry':editEntry?'Close':'Save & exit';el('guidedUsePhoto').disabled=busy||publishing||scanning;el('guidedRetake').disabled=busy||publishing||scanning;el('guidedCandidate').setAttribute('aria-busy',String(scanEntry&&scanning));dialog.setAttribute('aria-busy',String(busy||scanning));}
  function releaseScan(){if(scanSource?.url)URL.revokeObjectURL(scanSource.url);scanSource=null;}
  dialog.addEventListener('close',()=>{releaseScan();clearTimeout(searchTimer);searchRequest++;});
  function releaseCandidate(){if(candidate?.url)URL.revokeObjectURL(candidate.url);candidate=null;el('guidedCandidate').hidden=true;}
  function render(){
-  const c=guidedSession.card;
-  el('guidedAvailabilityLabel').hidden=!editEntry;el('guidedDeleteListing').hidden=!editEntry;
+  const c=guidedSession.card,scanLoading=scanEntry&&step===1&&scanning;
+  dialog.classList.toggle('scan-loading',scanLoading);
+  el('guidedCandidate').hidden=!candidate&&!scanLoading;
+  if(scanLoading){el('guidedCandidateImage').src=scanSource.url;el('guidedUsePhoto').textContent='Identifying card…';el('guidedRetake').textContent='Retake Photo';}
+  el('guidedDiscard').hidden=!discardAllowed;el('guidedAvailabilityLabel').hidden=!editEntry;el('guidedDeleteListing').hidden=!editEntry;
   el('guidedPublish').textContent=editEntry?'Save changes':'Publish to binder';
   dialog.querySelector('[data-guided-step="5"]>h3').textContent=editEntry?'Edit listing':'Listing details';
   dialog.querySelector('[data-guided-step="5"]>p').textContent=editEntry?'Update the details and photos, then preview and save your changes.':'Check the card details, choose this copy’s condition and price, and add listing photos. Identification photos are not added to your listing.';
   dialog.querySelector('[data-guided-step="6"]>p').textContent=editEntry?'Your changes go live when you press Save changes.':'Your listing stays private until you publish it.';
-  dialog.classList.toggle('scan-entry',scanEntry&&step===0);dialog.classList.toggle('has-scan-photo',!!candidate);el('guidedScanIntro').hidden=!scanEntry||step!==0||!!candidate;
-  el('guidedTitle').textContent=editEntry?(step===6?'Preview changes':'Edit listing'):step===7?'Add listing':step===4?'Card identified':step===5?'Create listing':step===6?'Preview listing':scanEntry&&step===0?'Scan a card':'New listing';
-  el('guidedPhotoStatus').hidden=step===4||step===6;
+  dialog.classList.toggle('scan-entry',scanEntry&&(step===0||scanLoading));dialog.classList.toggle('has-scan-photo',!!candidate);el('guidedScanIntro').hidden=!scanEntry||step!==0||!!candidate;
+  el('guidedTitle').textContent=editEntry?(step===6?'Preview changes':'Edit listing'):step===7?'Add listing':step===4?'Card identified':step===5?'Create listing':step===6?'Preview listing':scanEntry&&(step===0||scanLoading)?'Scan a card':'New listing';
+  el('guidedPhotoStatus').hidden=step===4||step===6||scanLoading;
   el('guidedSteps').hidden=step>=4;el('guidedNavigation').hidden=step===4||step===7;
   if(automaticDescription&&c.name.trim()&&c.set.trim()){c.description=buildSellerDescription(c);el('guidedDescription').value=c.description;}
   dialog.querySelectorAll('[data-guided-step]').forEach(s=>s.hidden=Number(s.dataset.guidedStep)!==step&&!(step===5&&s.dataset.guidedStep==='2'));
@@ -74,7 +77,7 @@ function createGuidedSeller(options){
  }
  function schedule(){if(editEntry){el('guidedSave').textContent='Unsaved changes';return;}el('guidedSave').textContent='Saving…';clearTimeout(timer);timer=setTimeout(save,500);}
  function open(card,forEdit=false){
-  editEntry=forEdit;
+  editEntry=forEdit;discardAllowed=!forEdit&&!card.version;
   clearTimeout(searchTimer);searchRequest++;searchEntry=false;el('guidedCatalogQuery').value='';el('guidedCatalogResults').textContent='';el('guidedCatalogStatus').textContent='Enter at least 2 characters to search.';releaseScan();detailLayout(false);identifiedCard=null;scanEntry=false;generation++;clearTimeout(timer);releaseCandidate();busy=false;scanning=false;publishing=false;automaticDescription=!forEdit&&(!card.description||(!!card.name&&!!card.set&&card.description===buildSellerDescription(card)));
   guidedSession=new GuidedDraft(card,sellerAPI,applyInventory);step=!card.photos.length?0:!card.name||!card.set?1:2;
   for(const [id,key] of [['guidedName','name'],['guidedSet','set'],['guidedPrice','price'],['guidedCondition','condition'],['guidedDescription','description']])el(id).value=card[key]||'';
@@ -87,13 +90,33 @@ function createGuidedSeller(options){
  async function exit(){if(busy||publishing)return;if(editEntry){if((candidate||guidedSession.dirty)&&!confirm('Discard unsaved changes to this listing?'))return;generation++;releaseCandidate();dialog.close();guidedSession=null;return;}if(candidate&&scanEntry&&step===0)releaseCandidate();
   if((scanEntry||searchEntry)&&!guidedSession.card.version&&!guidedSession.card.name.trim()&&!guidedSession.card.set.trim()){generation++;dialog.close();guidedSession=null;return;}
   if(candidate){await usePhoto(false);if(candidate)return;}busy=true;lock();if(await save()){generation++;dialog.close();guidedSession=null;}busy=false;lock();}
+ // New listings may already have autosaved; discard must remove that draft too.
+ el('guidedDiscard').onclick=async()=>{
+  if(busy||publishing||!discardAllowed)return;
+  if((guidedSession.card.name||guidedSession.card.photos.length||candidate||guidedSession.card.version)&&!confirm('Exit without saving? This listing and any autosaved draft will be discarded.'))return;
+  clearTimeout(timer);clearTimeout(searchTimer);searchRequest++;generation++;busy=true;lock();error();
+  try{
+   const session=guidedSession;
+   if(session.running)await session.running.catch(()=>{});
+   if(session.card.version||session.pending){
+    const data=await sellerAPI('listings'),remote=data.cards.find(c=>c.id===session.card.id);
+    if(remote){
+     const matchesPending=session.pending&&session.signature(remote)===session.signature(session.pending);
+     if(remote.status!=='draft'||(remote.version!==session.card.version&&!matchesPending))throw Error('This draft changed elsewhere. Refresh drafts to review it before deleting.');
+     await sellerAPI('listings/'+encodeURIComponent(remote.id)+'?version='+remote.version,{method:'DELETE'});
+    }
+   }
+   releaseCandidate();dialog.close();guidedSession=null;
+  }catch(e){error(e);el('guidedSave').textContent='Could not discard the draft. Retry Exit without saving.';}
+  finally{busy=false;lock();}
+ };
  async function pick(file,role){
   if(!file||busy||publishing)return;if(candidate?.attached){error(Error('Retry saving the current photo first.'));return;}releaseCandidate();busy=true;lock();error();const token=generation;
   try{const prepared=await prepareSellerPhoto(file,s=>el('guidedPhotoStatus').textContent=s);if(token!==generation)return;if(role==='front'&&scanEntry&&step!==5){identifiedCard=null;step=0;detailLayout(false);guidedSession.card.catalogCardId=null;guidedSession.card.name='';guidedSession.card.set='';el('guidedName').value='';el('guidedSet').value='';if(automaticDescription){guidedSession.card.description='';el('guidedDescription').value='';}}candidate={blob:prepared.blob,role,url:URL.createObjectURL(prepared.blob)};el('guidedCandidateImage').src=candidate.url;el('guidedCandidate').hidden=false;el('guidedUsePhoto').textContent=scanEntry&&step===0?'Quick Scan':'Use photo';el('guidedRetake').textContent=scanEntry&&step===0?'Retake Photo':'Choose another';render();el('guidedPhotoStatus').textContent='Check focus and glare before using this photo.';}
   catch(e){error(e);}finally{busy=false;render();}
  }
  async function scan(blob){
-  const token=generation;scanning=true;lock();el('guidedMatches').textContent='';el('guidedScanStatus').textContent='Scanning card…';
+  if(scanning)return;const token=generation;scanning=true;render();el('guidedMatches').textContent='';el('guidedScanStatus').textContent='Scanning card…';
   try{
    if(!blob&&scanEntry&&scanSource)blob=scanSource.blob;
    if(!blob){const r=await fetch(guidedSession.card.photos[0]);if(!r.ok)throw Error('Could not load the front photo. Enter details manually or try again.');blob=await r.blob();}
@@ -103,14 +126,14 @@ function createGuidedSeller(options){
    el('guidedScanStatus').textContent=offers.length?'Check the match before choosing. Condition and price are yours to enter.':'No confident match. Enter the name and set yourself, or try scanning again.';
    offers.forEach(c=>{const b=document.createElement('button');b.type='button';b.className='guided-match';b.textContent=c.name+' · '+c.set+' — Use this card';b.onclick=()=>{if(busy||publishing)return;if(scanEntry){showIdentified(c);return;}guidedSession.card.catalogCardId=c.id;guidedSession.card.name=c.name;guidedSession.card.set=c.set;el('guidedName').value=c.name;el('guidedSet').value=c.set;el('guidedMatches').textContent='';el('guidedScanStatus').textContent='Details filled. Check them, then continue.';render();schedule();};el('guidedMatches').appendChild(b);});
   }catch(e){if(token===generation)el('guidedScanStatus').textContent=e.message+' You can enter details manually.';}
-  finally{if(token===generation){scanning=false;lock();}}
+  finally{if(token===generation){scanning=false;if(guidedSession&&dialog.open)render();else lock();}}
  }
  async function usePhoto(scanAfter=true){
   if(!candidate||busy)return;
   if(scanEntry&&step===0){
    releaseScan();scanSource={blob:candidate.blob,url:candidate.url};candidate.url=null;releaseCandidate();step=1;generation++;
-   el('guidedPhotoStatus').textContent='Scan photo is for identification only. Add listing photos after choosing your card.';el('guidedSave').textContent='Scan photo is not saved';render();
-   if(scanAfter)await scan(scanSource.blob);return;
+   el('guidedPhotoStatus').textContent='Scan photo is for identification only. Add listing photos after choosing your card.';el('guidedSave').textContent='Scan photo is not saved';
+   if(scanAfter)await scan(scanSource.blob);else render();return;
   }
   busy=true;lock();error();
   try{
@@ -166,7 +189,7 @@ function createGuidedSeller(options){
   try{
    if(editEntry){if(await save(true)){publishing=false;generation++;dialog.close();guidedSession=null;}else publishing=false;return;}
    await guidedSession.publish();generation++;el('guidedSave').textContent='Published to your buyer binder';el('guidedRetry').hidden=true;
-   dialog.querySelectorAll('[data-guided-step]').forEach(s=>s.hidden=true);el('guidedNavigation').hidden=true;el('guidedSteps').hidden=true;el('guidedExit').hidden=true;el('guidedSuccess').hidden=false;el('guidedView').href='index.html#card='+guidedSession.card.id;
+   dialog.querySelectorAll('[data-guided-step]').forEach(s=>s.hidden=true);el('guidedNavigation').hidden=true;el('guidedSteps').hidden=true;el('guidedExit').hidden=true;el('guidedDiscard').hidden=true;el('guidedSuccess').hidden=false;el('guidedView').href='index.html#card='+guidedSession.card.id;
    publishing=false;
   }catch(e){error(e);el('guidedSave').textContent='Publication not confirmed. Retry to check and finish.';el('guidedRetry').hidden=false;}
   finally{busy=false;lock();el('guidedRetry').disabled=false;}

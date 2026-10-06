@@ -17,3 +17,11 @@
 .guided-preview-extras{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}.guided-preview-extras img{width:80px;height:108px;object-fit:contain;border:1px solid var(--line);border-radius:8px}
 
 .catalog-result{display:flex;align-items:center;gap:16px;width:100%;text-align:left;padding:12px;margin:10px 0;min-height:80px}.catalog-result img{width:52px;height:72px;object-fit:contain;flex-shrink:0}.catalog-result span{min-width:0;overflow-wrap:anywhere}.catalog-result small{display:block;margin-top:6px;color:var(--muted)}
+
+.guided-editor .dialog-head{flex-wrap:wrap;gap:8px}.guided-editor .dialog-head h2{flex:1 1 160px}.guided-editor #guidedDiscard{font-size:13px}
+
+.scan-loading [data-guided-step="1"]{display:none!important}
+.scan-loading #guidedUsePhoto::before{content:"";display:inline-block;width:18px;height:18px;margin-right:10px;vertical-align:middle;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:scan-spin .8s linear infinite}
+.scan-loading #guidedUsePhoto{opacity:1}
+@keyframes scan-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.scan-loading #guidedUsePhoto::before{animation:none}}

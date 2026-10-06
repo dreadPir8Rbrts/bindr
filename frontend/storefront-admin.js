@@ -78,7 +78,11 @@
    if(!confirm('Delete this draft? This cannot be undone.'))return;
    deleting=true;resume.disabled=actions.disabled=remove.disabled=true;remove.textContent='Deleting…';
    try{await api('listings/'+encodeURIComponent(card.id)+'?version='+encodeURIComponent(card.version),{method:'DELETE'});
-    if(authorized&&adminMode&&draftsVisible){await drafts();el('storefrontDraftRefresh').focus({preventScroll:true});}
+    if(authorized&&adminMode&&draftsVisible&&row.isConnected){
+     const focusTarget=(row.nextElementSibling||row.previousElementSibling)?.querySelector('[data-admin-resume]')||el('storefrontDraftRefresh');
+     row.remove();el('storefrontDraftStatus').textContent=el('storefrontDraftCards').children.length?'Draft deleted.':'No private drafts yet. Create a new listing to start.';
+     focusTarget.focus({preventScroll:true});
+    }
    }catch(e){if(row.isConnected)el('storefrontDraftStatus').textContent=e.message+' Refresh drafts before retrying if it changed elsewhere.';}
    finally{deleting=false;resume.disabled=actions.disabled=remove.disabled=false;remove.textContent='Delete';}
   };

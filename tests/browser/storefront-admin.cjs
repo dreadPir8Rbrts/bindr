@@ -6,7 +6,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
  try{
  for(const role of ['anonymous','buyer','seller']){
   const context=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
-  let currentRole=role,privateReads=0,revision=1,scanCalls=0,sessionChecks=0,sellerPages=0,expireScan=false,deleteCalls=0;
+  let currentRole=role,privateReads=0,revision=1,scanCalls=0,sessionChecks=0,sellerPages=0,expireScan=false,deleteCalls=0,scanGate=null;
   const base={...JSON.parse(fs.readFileSync(path.resolve(__dirname,'../../inventory.json'))).cards[0],status:'available',sold:false,version:1};
   base.photoRoles=base.photos.map((_,i)=>i===0?'front':'detail');
   let cards=[base,{...base,id:'c900',name:'Private draft',status:'draft'}];const errors=[];
@@ -24,7 +24,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
     if(currentRole!=='seller')return route.fulfill({status:403,json:{detail:'Seller required'}});
     if(p.endsWith('/catalog/search'))return route.fulfill({json:{cards:[{id:'00000000-0000-4000-8000-000000000001',name:'Pikachu',set:'Base Set · 58/102 · Common',image_url:'images/full/c1_1.jpg',language_code:'EN'}],has_more:false}});
     if(p.endsWith('/session'))return route.fulfill({json:{authenticated:true,email:'seller@example.test'}});
-    if(p.endsWith('/scan')){scanCalls++;return route.fulfill({json:scanCalls===1?{status:'no_match'}:{status:'matched',card:{id:'00000000-0000-4000-8000-000000000001',name:'Pikachu',set:'Base Set · 58/102 · Common',image_url:'images/full/c1_1.jpg'},confidence:.99}});}
+    if(p.endsWith('/scan')){scanCalls++;if(scanGate)await scanGate;return route.fulfill({json:scanCalls===1?{status:'no_match'}:{status:'matched',card:{id:'00000000-0000-4000-8000-000000000001',name:'Pikachu',set:'Base Set · 58/102 · Common',image_url:'images/full/c1_1.jpg'},confidence:.99}});}
     if(p.includes('/listings')){
      privateReads++;
      if(req.method()==='DELETE'){deleteCalls++;const id=p.split('/').pop(),version=Number(new URL(req.url()).searchParams.get('version'));const card=cards.find(c=>c.id===id);if(card?.version!==version)return route.fulfill({status:409,json:{detail:'Stale version'}});cards=cards.filter(c=>c.id!==id);revision++;}
@@ -59,6 +59,13 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    assert.equal(await editor.locator('#guidedName').inputValue(),'Pikachu');assert.equal(await editor.locator('#guidedSet').inputValue(),'Base Set · 58/102 · Common');assert.deepEqual({sessionChecks,sellerPages},beforeNew);
    await editor.locator('#guidedPrevious').click();await editor.locator('#guidedCatalogQuery').waitFor();
    await editor.locator('.catalog-result').click();await editor.locator('#guidedExit').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.length,3);
+   // Empty exit creates no draft; discard after autosave removes the saved draft.
+   await page.click('[data-admin-nav="new"]');await editor.locator('#guidedDiscard').click();await editor.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.length,3);
+   await page.click('[data-admin-nav="new"]');await editor.locator('#guidedCatalogQuery').fill('Pikachu');await editor.locator('.catalog-result').click();
+   await page.waitForFunction(()=>document.querySelector('#guidedSave').textContent.includes('Saved online'));assert.equal(cards.length,4);
+   page.once('dialog',d=>d.dismiss());await editor.locator('#guidedDiscard').click();assert.equal(await editor.locator('#guidedEditor').isVisible(),true);
+   page.once('dialog',d=>d.accept());await editor.locator('#guidedDiscard').click();await editor.locator('#guidedEditor').waitFor({state:'hidden'});assert.equal(cards.length,3);
+
    await page.click('[data-admin-nav="drafts"]');await page.click('[data-admin-resume="c900"]');await editor.locator('#guidedEditor').waitFor();await editor.locator('#guidedNext').click();await editor.locator('#guidedPrice').fill('32');await editor.locator('#guidedPublish').click();await editor.locator('#guidedSuccess').waitFor();await editor.locator('#guidedDone').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.click('#storefrontDraftBack');await page.locator('#binderGrid [data-card="c900"]').waitFor();
    const beforeEdit={sessionChecks,sellerPages},editRevision=revision;
    await page.click('[data-admin-edit="c900"]');await editor.locator('[data-guided-step="5"]').waitFor();assert.deepEqual({sessionChecks,sellerPages},beforeEdit);
@@ -84,7 +91,14 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await editor.getByRole('button',{name:'Quick Scan',exact:true}).click();await page.locator('#storefrontLogin').waitFor();
    await page.fill('#storefrontEmail','seller@example.test');await page.fill('#storefrontPassword','test-password');await page.click('#storefrontLoginSubmit');await page.locator('#storefrontLogin').waitFor({state:'hidden'});
    assert.equal(await page.locator('#guidedEditor').isVisible(),true);await editor.locator('#guidedScan').click();await editor.locator('[data-guided-step="1"]').waitFor();await page.waitForFunction(()=>document.querySelector('#guidedScanStatus').textContent.includes('No confident match'));
-   assert.equal(scanCalls,1);assert.equal(revision,writesBeforeScan);await editor.locator('#guidedScan').click();await editor.locator('[data-guided-step="4"]').waitFor();
+   assert.equal(scanCalls,1);assert.equal(revision,writesBeforeScan);
+   let finishScan;scanGate=new Promise(resolve=>finishScan=resolve);await editor.locator('#guidedScan').click();
+   await editor.getByRole('button',{name:'Identifying card…',exact:true}).waitFor();
+   assert.equal(await editor.locator('#guidedCandidateImage').isVisible(),true);
+   assert.equal(await editor.locator('[data-guided-step="1"]').isVisible(),false);
+   assert.equal(await editor.locator('#guidedUsePhoto').isDisabled(),true);assert.equal(await editor.locator('#guidedRetake').isDisabled(),true);
+   await page.screenshot({path:'/tmp/bindr-quick-scan-loading.png'});
+   finishScan();scanGate=null;await editor.locator('[data-guided-step="4"]').waitFor();
    assert.ok((await editor.locator('#guidedIdentifiedCard').textContent()).includes('58/102'));
    await page.screenshot({path:'/tmp/bindr-identified-card.png'});
    const retake=page.waitForEvent('filechooser');await editor.locator('#guidedMatchRetake').click();await (await retake).setFiles(photo);await editor.getByRole('button',{name:'Quick Scan',exact:true}).click();await editor.locator('[data-guided-step="4"]').waitFor();
@@ -99,7 +113,7 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await editor.locator('#guidedPrevious').click();await editor.locator('[data-guided-step="5"]').waitFor();assert.equal(await editor.locator('#guidedPrice').inputValue(),'20');
    await editor.locator('#guidedNext').click();await editor.locator('#guidedPublish').click();await editor.locator('#guidedSuccess').waitFor();await editor.locator('#guidedDone').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});
    await page.click('[data-admin-nav="scan"]');await editor.locator('#guidedScanIntro').waitFor();await page.click('[data-admin-nav="drafts"]');await page.locator('#guidedEditor').waitFor({state:'hidden'});await page.locator('#storefrontDrafts').waitFor();
-   cards.push({...base,id:'c901',name:'Swipe test',status:'draft'});await page.click('#storefrontDraftRefresh');
+   const deletesBeforeSwipe=deleteCalls;cards.push({...base,id:'c901',name:'Swipe test',status:'draft'});await page.click('#storefrontDraftRefresh');
    const swipeRow=page.locator('.draft-swipe-row').filter({has:page.locator('[data-admin-resume="c901"]')});await swipeRow.waitFor();
    const box=await swipeRow.boundingBox(),touch=await context.newCDPSession(page);
    const point={x:box.x+box.width-90,y:box.y+30};
@@ -109,15 +123,19 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    await touch.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[point]});
    for(let dx=15;dx<=120;dx+=15)await touch.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:point.x-dx,y:point.y}]});
    await touch.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
-   await swipeRow.locator('.draft-delete').waitFor();assert.equal(await page.locator('#guidedEditor').isVisible(),false);assert.equal(deleteCalls,0);
+   await swipeRow.locator('.draft-delete').waitFor();assert.equal(await page.locator('#guidedEditor').isVisible(),false);assert.equal(deleteCalls,deletesBeforeSwipe);
    await page.screenshot({path:'/tmp/bindr-draft-swipe.png'});
-   page.once('dialog',d=>d.dismiss());await swipeRow.locator('.draft-delete').click();assert.equal(deleteCalls,0);
+   page.once('dialog',d=>d.dismiss());await swipeRow.locator('.draft-delete').click();assert.equal(deleteCalls,deletesBeforeSwipe);
    await swipeRow.locator('.draft-actions').focus();await page.keyboard.press('Escape');assert.equal(await swipeRow.locator('.draft-delete').isVisible(),false);
    await page.keyboard.press('Enter');await swipeRow.locator('.draft-delete').waitFor();
    cards.find(c=>c.id==='c901').version=2;page.once('dialog',d=>d.accept());await swipeRow.locator('.draft-delete').click();
    await page.waitForFunction(()=>document.querySelector('#storefrontDraftStatus').textContent.includes('Stale version'));assert.ok(cards.some(c=>c.id==='c901'));
    await page.click('#storefrontDraftRefresh');await swipeRow.waitFor();await swipeRow.locator('.draft-actions').click();
+   const retainedRow=await page.locator('.draft-swipe-row').filter({hasNot:page.locator('[data-admin-resume="c901"]')}).first().elementHandle();
+   const readsBeforeDelete=privateReads;
+   await page.evaluate(()=>{window.draftLoadingFlashed=false;window.draftObserver=new MutationObserver(()=>{if(document.querySelector('#storefrontDraftStatus').textContent.includes('Loading drafts'))window.draftLoadingFlashed=true;});window.draftObserver.observe(document.querySelector('#storefrontDraftStatus'),{childList:true,subtree:true});});
    const beforeDelete={sessionChecks,sellerPages};page.once('dialog',d=>d.accept());await swipeRow.locator('.draft-delete').click();await swipeRow.waitFor({state:'detached'});
+   assert.equal(await retainedRow.evaluate(row=>row.isConnected),true);assert.equal(privateReads,readsBeforeDelete+1);assert.equal(await page.evaluate(()=>{window.draftObserver.disconnect();return window.draftLoadingFlashed;}),false);
    assert.equal(cards.some(c=>c.id==='c901'),false);assert.deepEqual({sessionChecks,sellerPages},beforeDelete);
    const savedCards=cards;cards=cards.filter(c=>c.status!=='draft');await page.click('#storefrontDraftRefresh');await page.waitForFunction(()=>document.querySelector('#storefrontDraftStatus').textContent.startsWith('No private drafts'));assert.equal(await page.locator('[data-admin-resume]').count(),0);cards=savedCards;
    await page.click('#buyerMode');assert.equal(await page.locator('#adminMobileNav').isVisible(),false);assert.equal(await page.locator('[data-admin-edit]').count(),0);assert.equal(await page.locator('#storefrontDrafts').isVisible(),false);
