@@ -1,5 +1,7 @@
 # Bindr developer handoff
 
+For the current architecture, verified service status and remaining migration steps, see [current-state.md](current-state.md). The Netlify release and build instructions below the migration notes are historical; do not deploy the migration branch through that pipeline.
+
 > **Migration in progress (branch `fastapi-migration`):** moving from Netlify Functions + Blobs to FastAPI + Supabase (Postgres, Auth) + S3, runnable locally with no Netlify dependency. Browser files now live in `frontend/`; the API lives in `backend/`. Listings, appearance, seller sign-in, photo uploads (S3) and the card scanner run on FastAPI; existing listings stay in Netlify Blobs until the data migration.
 >
 > Local development: `make setup` once, then `make dev` → http://localhost:8000 (seller page: `/seller.html`). `make test` runs pytest and the Node frontend tests. Local runs use the production Supabase database and S3 bucket, so treat local writes as live.
