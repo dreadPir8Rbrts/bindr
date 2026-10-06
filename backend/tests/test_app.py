@@ -37,3 +37,8 @@ def test_security_headers() -> None:
         assert headers["x-content-type-options"] == "nosniff"
         assert headers["x-frame-options"] == "DENY"
         assert headers["referrer-policy"] == "strict-origin-when-cross-origin"
+
+
+def test_seller_editor_can_only_be_embedded_by_same_origin() -> None:
+    assert client.get("/seller.html?embed=storefront&action=new").headers["x-frame-options"] == "SAMEORIGIN"
+    assert client.get("/index.html").headers["x-frame-options"] == "DENY"

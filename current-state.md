@@ -72,6 +72,17 @@ bindr/
 
 ---
 
+## Storefront admin mode
+
+- The storefront footer offers Seller sign in. The Buyer mode / Admin mode toggle is shown only after the seller-only `/api/v1/session` endpoint verifies access. A signed-in non-seller has the normal buyer view.
+- Fresh sign-in defaults to Buyer mode; the selected mode is remembered in session storage for that tab and account. Signing out removes admin UI and clears the preference.
+- Admin mode adds New listing, private server drafts, Edit listing on published cards, and a Seller tools link to `/seller.html`. Drafts never enter the public card grid.
+- Creation/resume and published-listing editing reuse the existing seller page in a same-origin dialog frame (`seller-embed.js`). Editor close requests go through existing save/exit handling; the parent refreshes public inventory and drafts afterward. Messages validate both origin and source. `/seller.html` permits only same-origin framing; other pages keep `X-Frame-Options: DENY`.
+- Existing published-listing unsaved edits retain their browser-draft behavior; use Seller tools to recover those device drafts. Guided new-listing drafts are saved online.
+- Browser regression: `tests/browser/storefront-admin.cjs` uses mocked APIs for visitor, non-admin, and admin sessions, session mode persistence, draft publication, existing listing editing, and sign-out. Run with Playwright installed (optional `PLAYWRIGHT_MODULE` and `CHROME_PATH`).
+
+---
+
 ## Running locally
 
 ```bash

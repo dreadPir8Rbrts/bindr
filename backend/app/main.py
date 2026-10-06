@@ -25,6 +25,9 @@ SECURITY_HEADERS = {
 async def add_security_headers(request: Request, call_next):
     response = await call_next(request)
     for name, value in SECURITY_HEADERS.items():
+        # Only the seller editor can be embedded, and only by this same origin.
+        if name == "X-Frame-Options" and request.url.path == "/seller.html":
+            value = "SAMEORIGIN"
         response.headers.setdefault(name, value)
     return response
 
