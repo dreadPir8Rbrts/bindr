@@ -169,7 +169,7 @@ Key rules the database enforces:
 
 ### Photos (`app/api/photos.py`, `app/services/storage.py`)
 
-1. **Preparation:** the browser prepares the photo (≤3 MB, HEIC converted) plus a 480px JPEG thumbnail.
+1. **Preparation:** the browser prepares the photo (≤1 MB, longest edge ≤2048px, HEIC converted; server ceiling remains 3 MB) plus a 480px JPEG thumbnail.
 2. **Ticket:** `POST /photos/uploads` returns presigned POSTs. The S3 policy pins the exact key, content type and maximum size.
 3. **Upload:** the browser uploads both files straight to S3, with a progress bar.
 4. **Confirm:** `POST /photos/confirm` checks both objects' size, type and file signature, then records a pending photo.
@@ -292,3 +292,5 @@ The guided Add Photos section uses Take Photo (native camera) and Choose Photo (
 Photo uploads send the thumbnail and full photo concurrently, then confirm both before attaching them. The guided flow no longer waits for a draft save before uploading; it saves after attachment and shows transfer progress. Image size/quality and server validation are unchanged. Production timing has not yet been measured.
 
 After selecting a guided listing photo, the editor automatically scrolls to its review and focuses Use photo. The review actions have equal widths, a 12px gap, and matching outer insets; scan actions retain their stacked layout.
+
+Mobile upload optimization: preserve originals only at ≤1 MB and ≤2048px; otherwise encode JPEG starting at quality 0.90 to a 1 MB target without cropping or upscaling. This reduces fine zoom detail compared with the prior 3072–4096px profile. Existing photos are unchanged. Distinct preparation/ticket/transfer/verification/save messages expose the waiting stage. `console.table(bindrUploadTimings)` shows the last 10 local upload attempts (bytes and per-stage milliseconds only, no URLs/credentials). Actual production latency still needs a post-deploy test.

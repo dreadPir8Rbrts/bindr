@@ -10,18 +10,31 @@ function postToStorage(target,blob,onProgress){return new Promise((resolve,rejec
  xhr.onerror=()=>reject(Error('Upload connection lost. Retry this photo.'));xhr.ontimeout=()=>reject(Error('Upload timed out. Check your connection and retry this photo.'));xhr.send(form);
 });}
 async function makeThumbnail(blob){const img=await readPhotoImage(blob);try{const size=BinderPhotoPreparation.fitPhoto(img.width,img.height,480),canvas=document.createElement('canvas');canvas.width=size.width;canvas.height=size.height;const ctx=canvas.getContext('2d');ctx.fillStyle='#ffffff';ctx.fillRect(0,0,size.width,size.height);ctx.drawImage(img.source,0,0,size.width,size.height);return await new Promise((resolve,reject)=>canvas.toBlob(b=>b?resolve(b):reject(Error('Could not prepare the photo preview.')),'image/jpeg',0.8));}finally{img.close();}}
-async function uploadSellerPhoto(blob,onProgress,api=sellerAPI){
- const thumb=await makeThumbnail(blob),json={'Content-Type':'application/json'};
- const ticket=await api('photos/uploads',{method:'POST',headers:json,body:JSON.stringify({contentType:blob.type,bytes:blob.size,thumbBytes:thumb.size})});
- // Start both transfers together, and let both settle before allowing a retry.
- const transfers=await Promise.allSettled([
-  postToStorage(ticket.thumbUpload,thumb,()=>{}),
-  postToStorage(ticket.upload,blob,onProgress),
- ]);
- const failed=transfers.find(result=>result.status==='rejected');if(failed)throw failed.reason;
- onProgress(99);
- return api('photos/confirm',{method:'POST',headers:json,body:JSON.stringify({key:ticket.key})});
+async function uploadSellerPhoto(blob,onProgress,api=sellerAPI,onStage=()=>{}){
+ const timings={photoBytes:blob.size},started=Date.now();
+ async function timed(name,work){const start=Date.now();try{return await work();}finally{timings[name]=Date.now()-start;}}
+ try{
+  onStage('Preparing upload…');
+  const thumb=await timed('thumbnailMs',()=>makeThumbnail(blob)),json={'Content-Type':'application/json'};timings.thumbnailBytes=thumb.size;
+  onStage('Requesting upload…');
+  const ticket=await timed('ticketMs',()=>api('photos/uploads',{method:'POST',headers:json,body:JSON.stringify({contentType:blob.type,bytes:blob.size,thumbBytes:thumb.size})}));
+  onStage('Uploading photo…');
+  // Both transfers must settle before retrying or confirming an upload.
+  const transfers=await timed('transferMs',()=>Promise.allSettled([
+   postToStorage(ticket.thumbUpload,thumb,()=>{}),
+   postToStorage(ticket.upload,blob,onProgress),
+  ]));
+  const failed=transfers.find(result=>result.status==='rejected');if(failed)throw failed.reason;
+  onProgress(99);onStage('Verifying photo…');
+  const result=await timed('confirmationMs',()=>api('photos/confirm',{method:'POST',headers:json,body:JSON.stringify({key:ticket.key})}));
+  timings.success=true;return result;
+ }finally{
+  timings.totalMs=Date.now()-started;
+  // Local diagnostics contain only byte counts and durations, never credentials or URLs.
+  globalThis.bindrUploadTimings=[...(globalThis.bindrUploadTimings||[]).slice(-9),timings];
+ }
 }
+
 function readPhotoImage(blob){return new Promise((resolve,reject)=>{
  const url=URL.createObjectURL(blob),img=new Image();let finished=false;
  const timer=setTimeout(()=>finish(false),25000);
@@ -42,7 +55,7 @@ async function prepareSellerPhoto(file,onStage=()=>{}){
  try{decoded=await readPhotoImage(file);}catch(e){if(kind!=='image/heic')throw Error('This photo could not be read. Try another copy from Photos.');onStage('Converting HEIC…');return convertHeicPhoto(file);}
  try{
   // Keep small supported originals intact; larger photos are fitted without cropping.
-  if(kind!=='image/heic'&&file.size<=rules.MAX_BYTES&&Math.max(decoded.width,decoded.height)<=4096)return {blob:file.slice(0,file.size,kind),width:decoded.width,height:decoded.height,original:true};
+  if(kind!=='image/heic'&&file.size<=rules.TARGET_BYTES&&Math.max(decoded.width,decoded.height)<=rules.MAX_EDGE)return {blob:file.slice(0,file.size,kind),width:decoded.width,height:decoded.height,original:true};
   onStage(kind==='image/heic'?'Converting HEIC…':'Resizing photo…');
   return await rules.encodePhoto(decoded.source,decoded.width,decoded.height,(w,h)=>{const c=document.createElement('canvas');c.width=w;c.height=h;return c;});
  }finally{decoded.close();}

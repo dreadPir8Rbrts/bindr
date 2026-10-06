@@ -7,7 +7,7 @@ function createGuidedSeller(options){
  const sellerConditions=['Near Mint+','Near Mint','Near Mint-','Lightly Played+','Lightly Played','Lightly Played-','Moderately Played'];
  const sellerMoney=n=>new Intl.NumberFormat('en-US',{style:'currency',currency:'USD'}).format(n);
  const sellerAPI=options.api;
- const uploadPhoto=(blob,progress)=>uploadSellerPhoto(blob,progress,sellerAPI);
+ const uploadPhoto=(blob,progress)=>uploadSellerPhoto(blob,progress,sellerAPI,message=>el('guidedPhotoStatus').textContent=message);
  const dialog=document.createElement('dialog');dialog.id='guidedEditor';dialog.className='seller-editor guided-editor';dialog.setAttribute('aria-labelledby','guidedTitle');
  dialog.innerHTML=`<header class="dialog-head"><h2 id="guidedTitle" tabindex="-1">New listing</h2><button type="button" id="guidedDiscard" hidden>Exit without saving</button><button type="button" id="guidedExit">Save &amp; exit</button></header>
  <div class="guided-body"><ol id="guidedSteps" class="guided-steps">${['Front photo','Identify','Add Photos','Details & publish'].map(x=>`<li>${x}</li>`).join('')}</ol>
@@ -156,6 +156,7 @@ function createGuidedSeller(options){
     if(index>=0){c.photos[index]=p.upload.url;c.photoRoles[index]=p.role;}else{c.photos.push(p.upload.url);c.photoRoles.push(c.photos.length===1?'front':p.role);}
     c.thumb=c.photos[0];p.attached=true;
    }
+   el('guidedPhotoStatus').textContent=editEntry?'Photo ready.':'Saving listing photo…';
    if(!await save())return;
    const blob=p.blob,front=p.role==='front';releaseCandidate();el('guidedPhotoStatus').textContent=editEntry?'Photo uploaded. Save changes to attach it to the listing.':'Photo saved online.';
    if(front&&step!==5){step=1;generation++;if(scanAfter)scan(blob);}render();
