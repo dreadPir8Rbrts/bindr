@@ -25,3 +25,9 @@
 .scan-loading #guidedUsePhoto{opacity:1}
 @keyframes scan-spin{to{transform:rotate(360deg)}}
 @media(prefers-reduced-motion:reduce){.scan-loading #guidedUsePhoto::before{animation:none}}
+
+.guided-editor #guidedDiscard{background:transparent;border:0;box-shadow:none;border-radius:0;padding:8px 0;color:var(--muted);text-align:left;text-decoration:underline;text-underline-offset:4px;text-decoration-color:transparent}
+.guided-editor #guidedDiscard:hover{color:var(--text);text-decoration-color:currentColor}
+.guided-editor #guidedDiscard:focus-visible{outline:2px solid var(--teal);outline-offset:4px;border-radius:4px}
+.guided-editor #guidedTitle:focus{outline:none}
+#guidedPhotoCount{font-size:12px;color:var(--muted)}

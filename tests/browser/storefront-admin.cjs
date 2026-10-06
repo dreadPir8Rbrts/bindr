@@ -105,10 +105,17 @@ const fs=require('node:fs'),path=require('node:path'),assert=require('node:asser
    assert.equal(revision,writesBeforeScan);await editor.getByRole('button',{name:'Create Listing',exact:true}).click();await editor.locator('[data-guided-step="5"]').waitFor();assert.equal(await editor.locator('#guidedName').inputValue(),'Pikachu');assert.equal(await editor.locator('#guidedSet').inputValue(),'Base Set · 58/102 · Common');
    await editor.locator('#guidedNext').click();assert.equal(await editor.locator('[data-guided-step="5"]').isVisible(),true);
    await editor.locator('#guidedPrice').fill('20');
-   await page.evaluate(()=>{uploadSellerPhoto=async()=>({url:'images/full/c1_2.jpg'});});
+   await page.evaluate(()=>{let shot=0;uploadSellerPhoto=async()=>({url:'images/full/c1_2.jpg?shot='+ ++shot});});
    await editor.locator('#guidedDetail').setInputFiles(photo);await editor.locator('#guidedUsePhoto').click();await editor.locator('#guidedCandidate').waitFor({state:'hidden'});
    assert.equal(await editor.locator('#guidedPhotos img').count(),1);
-   await editor.locator('#guidedNext').click();await editor.locator('[data-guided-step="6"]').waitFor();assert.ok((await editor.locator('#guidedPreview').textContent()).includes('1 photo'));
+   assert.equal(await editor.locator('#guidedPhotoCamera').getAttribute('capture'),'environment');
+   assert.equal(await editor.locator('#guidedDetailsHost .upload-picker').count(),2);
+   for(let i=1;i<6;i++){await editor.locator(i%2?'#guidedPhotoCamera':'#guidedDetail').setInputFiles(photo);await editor.locator('#guidedUsePhoto').click();await editor.locator('#guidedCandidate').waitFor({state:'hidden'});}
+   assert.equal(await editor.locator('#guidedPhotos img').count(),6);assert.equal(await editor.locator('#guidedDetail').isDisabled(),true);assert.equal(await editor.locator('#guidedPhotoCamera').isDisabled(),true);
+   await editor.locator('[data-remove-photo="5"]').click();assert.equal(await editor.locator('#guidedDetail').isEnabled(),true);
+   await editor.locator('#guidedDetail').setInputFiles(photo);await editor.locator('#guidedUsePhoto').click();await editor.locator('#guidedCandidate').waitFor({state:'hidden'});
+   await page.screenshot({path:'/tmp/bindr-add-photos.png'});
+   await editor.locator('#guidedNext').click();await editor.locator('[data-guided-step="6"]').waitFor();assert.ok((await editor.locator('#guidedPreview').textContent()).includes('6 photos'));
    await page.screenshot({path:'/tmp/bindr-listing-preview.png'});
    await editor.locator('#guidedPrevious').click();await editor.locator('[data-guided-step="5"]').waitFor();assert.equal(await editor.locator('#guidedPrice').inputValue(),'20');
    await editor.locator('#guidedNext').click();await editor.locator('#guidedPublish').click();await editor.locator('#guidedSuccess').waitFor();await editor.locator('#guidedDone').click();await page.locator('#guidedEditor').waitFor({state:'hidden'});

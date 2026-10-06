@@ -13,7 +13,13 @@ async function makeThumbnail(blob){const img=await readPhotoImage(blob);try{cons
 async function uploadSellerPhoto(blob,onProgress,api=sellerAPI){
  const thumb=await makeThumbnail(blob),json={'Content-Type':'application/json'};
  const ticket=await api('photos/uploads',{method:'POST',headers:json,body:JSON.stringify({contentType:blob.type,bytes:blob.size,thumbBytes:thumb.size})});
- await postToStorage(ticket.thumbUpload,thumb,()=>{});await postToStorage(ticket.upload,blob,onProgress);onProgress(99);
+ // Start both transfers together, and let both settle before allowing a retry.
+ const transfers=await Promise.allSettled([
+  postToStorage(ticket.thumbUpload,thumb,()=>{}),
+  postToStorage(ticket.upload,blob,onProgress),
+ ]);
+ const failed=transfers.find(result=>result.status==='rejected');if(failed)throw failed.reason;
+ onProgress(99);
  return api('photos/confirm',{method:'POST',headers:json,body:JSON.stringify({key:ticket.key})});
 }
 function readPhotoImage(blob){return new Promise((resolve,reject)=>{

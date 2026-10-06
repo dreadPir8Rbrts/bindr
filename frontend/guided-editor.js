@@ -9,13 +9,13 @@ function createGuidedSeller(options){
  const sellerAPI=options.api;
  const uploadPhoto=(blob,progress)=>uploadSellerPhoto(blob,progress,sellerAPI);
  const dialog=document.createElement('dialog');dialog.id='guidedEditor';dialog.className='seller-editor guided-editor';dialog.setAttribute('aria-labelledby','guidedTitle');
- dialog.innerHTML=`<header class="dialog-head"><h2 id="guidedTitle">New listing</h2><button type="button" id="guidedDiscard" hidden>Exit without saving</button><button type="button" id="guidedExit">Save &amp; exit</button></header>
- <div class="guided-body"><ol id="guidedSteps" class="guided-steps">${['Front photo','Identify','More photos','Details & publish'].map(x=>`<li>${x}</li>`).join('')}</ol>
+ dialog.innerHTML=`<header class="dialog-head"><h2 id="guidedTitle" tabindex="-1">New listing</h2><button type="button" id="guidedDiscard" hidden>Exit without saving</button><button type="button" id="guidedExit">Save &amp; exit</button></header>
+ <div class="guided-body"><ol id="guidedSteps" class="guided-steps">${['Front photo','Identify','Add Photos','Details & publish'].map(x=>`<li>${x}</li>`).join('')}</ol>
  <p id="guidedSave" role="status"></p><button id="guidedRetry" type="button" hidden>Retry saving</button>
  <section id="guidedScanIntro" hidden><div class="scan-intro-heading"><span class="scan-photo-badge">Photo scan</span><h3>Scan your card</h3><p>Take a clear photo of the front to identify your card.</p></div><label class="upload-picker scan-camera-picker">Open Camera to Take Photo<input id="guidedScanCamera" type="file" accept="image/*" capture="environment"></label><aside class="scan-photo-tips"><h4>Tips for best results</h4><ul><li>Keep the card name and number clearly visible</li><li>Include all four corners</li><li>Use even lighting and avoid glare</li><li>Hold steady for a sharp photo</li></ul></aside></section>
  <section data-guided-step="0"><h3>Photograph the front</h3><p>Keep all four corners in frame. Use even lighting and check for glare.</p><div id="guidedFront"></div><div class="phone-upload-actions"><label class="upload-picker">Take front photo<input id="guidedCamera" type="file" accept="image/*" capture="environment"></label><label class="upload-picker">Choose front photo<input id="guidedLibrary" type="file" accept="image/*,.heic,.heif"></label></div></section>
  <section data-guided-step="1" hidden><h3>Identify your card</h3><p>Check the name and set against your card, or enter them yourself.</p><p id="guidedScanStatus" role="status"></p><div id="guidedMatches"></div><button id="guidedScan" type="button">Scan front again</button><label>Card name<input id="guidedName" maxlength="300" required></label><label>Set · card number · rarity<input id="guidedSet" maxlength="400" required></label></section>
- <section data-guided-step="2" hidden><h3>Add more photos</h3><p>A back photo is optional. Add one to help buyers assess condition, plus any close-ups of wear.</p><div class="phone-upload-actions"><label class="upload-picker">Take back photo<input id="guidedBackCamera" type="file" accept="image/*" capture="environment"></label><label class="upload-picker">Choose back photo<input id="guidedBack" type="file" accept="image/*,.heic,.heif"></label><label class="upload-picker">Add close-up<input id="guidedDetail" type="file" accept="image/*,.heic,.heif"></label></div><div id="guidedPhotos" class="seller-photos"></div></section>
+ <section data-guided-step="2" hidden><h3>Add Photos</h3><p>Add up to 6 photos of this card. Include the front, back, and any details you want buyers to see. The first photo is your listing cover.</p><div class="phone-upload-actions"><label class="upload-picker">Take Photo<input id="guidedPhotoCamera" type="file" accept="image/*" capture="environment"></label><label class="upload-picker">Choose Photo<input id="guidedDetail" type="file" accept="image/*,.heic,.heif"></label></div><p id="guidedPhotoCount" role="status"></p><div id="guidedPhotos" class="seller-photos"></div></section>
  <section id="guidedCandidate" hidden><h3>Check your photo</h3><img id="guidedCandidateImage" alt="Photo preview"><button id="guidedUsePhoto" type="button" class="primary">Use photo</button><button id="guidedRetake" type="button">Choose another</button></section><p id="guidedPhotoStatus" role="status"></p>
  <section data-guided-step="3" hidden><h3>Details &amp; publish</h3><div class="seller-fields"><label>Condition<select id="guidedCondition">${sellerConditions.map(c=>`<option>${c}</option>`).join('')}</select></label><label>Price (USD)<input id="guidedPrice" type="number" min="0.01" max="999999.99" step="0.01" inputmode="decimal" required></label></div><label>About this copy (optional)<textarea id="guidedDescription" rows="4" maxlength="20000" placeholder="Describe any wear or details buyers should know."></textarea></label><h3>Listing preview</h3><div id="guidedPreview"></div><p>Your draft is private until you press Publish to binder.</p></section>
  <section data-guided-step="4" hidden><div id="guidedIdentifiedCard" class="identified-card"></div><div class="identified-actions"><button id="guidedCreateListing" type="button" class="primary">Create Listing</button><button id="guidedMatchRetake" type="button">Retake photo</button></div></section>
@@ -30,7 +30,7 @@ function createGuidedSeller(options){
  // Move the shared fields, rather than maintaining two sets of draft inputs.
  const detailNodes=[el('guidedName').parentElement,el('guidedSet').parentElement,el('guidedCondition').closest('.seller-fields'),el('guidedDescription').parentElement,dialog.querySelector('[data-guided-step="2"]')];
  const movable=[...detailNodes,el('guidedPreview')].map(node=>{const marker=document.createComment('listing field location');node.before(marker);return {node,marker};});
- function detailLayout(enabled){for(const {node,marker} of movable){if(enabled)(node.id==='guidedPreview'?el('guidedPreviewHost'):el('guidedDetailsHost')).appendChild(node);else marker.after(node);}el('guidedDetail').parentElement.firstChild.textContent=enabled?'Add More Photos':'Add close-up';}
+ function detailLayout(enabled){for(const {node,marker} of movable){if(enabled)(node.id==='guidedPreview'?el('guidedPreviewHost'):el('guidedDetailsHost')).appendChild(node);else marker.after(node);}}
  function showIdentified(card){
   identifiedCard=card;step=4;detailLayout(false);
   const parts=card.set.split('·').map(x=>x.trim()),number=card.printed_number||parts[1]||'';
@@ -41,7 +41,7 @@ function createGuidedSeller(options){
  function applyInventory(data){options.onSaved?.(data);}
 
  function error(e){el('guidedError').textContent=e?.message||'';}
- function lock(){dialog.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=busy||publishing);el('guidedScan').disabled=busy||publishing||scanning;el('guidedExit').textContent=busy?'Working…':publishing?'Save needs retry':editEntry?'Close':'Save & exit';el('guidedUsePhoto').disabled=busy||publishing||scanning;el('guidedRetake').disabled=busy||publishing||scanning;el('guidedCandidate').setAttribute('aria-busy',String(scanEntry&&scanning));dialog.setAttribute('aria-busy',String(busy||scanning));}
+ function lock(){dialog.querySelectorAll('button,input,select,textarea').forEach(e=>e.disabled=busy||publishing);el('guidedScan').disabled=busy||publishing||scanning;el('guidedExit').textContent=busy?'Working…':publishing?'Save needs retry':editEntry?'Close':'Save & exit';el('guidedUsePhoto').disabled=busy||publishing||scanning;el('guidedRetake').disabled=busy||publishing||scanning;el('guidedCandidate').setAttribute('aria-busy',String(scanEntry&&scanning));dialog.setAttribute('aria-busy',String(busy||scanning));for(const id of ['guidedPhotoCamera','guidedDetail'])el(id).disabled=busy||publishing||!!candidate||(guidedSession?.card.photos.length||0)>=6;}
  function releaseScan(){if(scanSource?.url)URL.revokeObjectURL(scanSource.url);scanSource=null;}
  dialog.addEventListener('close',()=>{releaseScan();clearTimeout(searchTimer);searchRequest++;});
  function releaseCandidate(){if(candidate?.url)URL.revokeObjectURL(candidate.url);candidate=null;el('guidedCandidate').hidden=true;}
@@ -63,10 +63,11 @@ function createGuidedSeller(options){
   dialog.querySelectorAll('[data-guided-step]').forEach(s=>s.hidden=Number(s.dataset.guidedStep)!==step&&!(step===5&&s.dataset.guidedStep==='2'));
   dialog.querySelectorAll('#guidedSteps li').forEach((li,i)=>{if(i===step)li.setAttribute('aria-current','step');else li.removeAttribute('aria-current');});
   el('guidedPrevious').hidden=step===0||(step===5&&!identifiedCard&&!searchEntry);el('guidedNext').hidden=step===3||step===6;el('guidedPublish').hidden=step!==3&&step!==6;
-  el('guidedNext').textContent=step===2&&!c.photoRoles.includes('back')?'Skip for now':'Continue';
+  el('guidedNext').textContent='Continue';
   el('guidedFront').innerHTML=c.photos[0]?`<img class="guided-front" src="${sellerEsc(c.photos[0])}" alt="Front of your card">`:'';
-  el('guidedPhotos').innerHTML=c.photos.map((url,i)=>`<div><img src="${sellerEsc(url)}" alt="${sellerEsc(c.photoRoles[i]||'Card')} photo"><span>${sellerEsc(c.photoRoles[i]||'Detail')}${i===0?' · Cover':''}</span>${editEntry&&i?`<button type="button" data-cover-photo="${i}">Make cover</button>`:''}${i||editEntry?`<button type="button" data-remove-photo="${i}">Remove</button>`:''}</div>`).join('');
-  el('guidedPreview').innerHTML=`${c.photos[0]?`<img class="guided-front" src="${sellerEsc(c.photos[0])}" alt="Listing cover">`:''}<div class="guided-preview-extras">${c.photos.slice(1).map(url=>`<img src="${sellerEsc(url)}" alt="Additional listing photo">`).join('')}</div><strong>${sellerEsc(c.name)}</strong><p>${sellerEsc(c.set)}</p><p>${sellerEsc(c.condition)} · ${sellerMoney(c.price)}</p><p class="guided-description">${sellerEsc(c.description)}</p><small>${c.photos.length} photo${c.photos.length===1?'':'s'}${c.photoRoles.includes('back')?'':' · No back photo'}</small>`;
+  el('guidedPhotoCount').textContent=c.photos.length+' / 6 photos'+(c.photos.length>=6?' · Remove a photo to add another.':'');
+  el('guidedPhotos').innerHTML=c.photos.map((url,i)=>`<div><img src="${sellerEsc(url)}" alt="${sellerEsc(c.photoRoles[i]||'Card')} photo"><span>${sellerEsc(c.photoRoles[i]||'Detail')}${i===0?' · Cover':''}</span>${editEntry&&i?`<button type="button" data-cover-photo="${i}">Make cover</button>`:''}${i||editEntry||step===5?`<button type="button" data-remove-photo="${i}">Remove</button>`:''}</div>`).join('');
+  el('guidedPreview').innerHTML=`${c.photos[0]?`<img class="guided-front" src="${sellerEsc(c.photos[0])}" alt="Listing cover">`:''}<div class="guided-preview-extras">${c.photos.slice(1).map(url=>`<img src="${sellerEsc(url)}" alt="Additional listing photo">`).join('')}</div><strong>${sellerEsc(c.name)}</strong><p>${sellerEsc(c.set)}</p><p>${sellerEsc(c.condition)} · ${sellerMoney(c.price)}</p><p class="guided-description">${sellerEsc(c.description)}</p><small>${c.photos.length} photo${c.photos.length===1?'':'s'}</small>`;
   lock();
  }
  async function save(force=false){
@@ -84,7 +85,7 @@ function createGuidedSeller(options){
   if(card.catalogCardId&&card.name&&card.set){step=5;detailLayout(true);}
   el('guidedSave').textContent=card.version?'Saved online · Private draft':'Add a front photo to start your private draft';el('guidedRetry').hidden=true;
   for(const id of ['guidedScanStatus','guidedMatches','guidedPhotoStatus'])el(id).textContent='';
-  el('guidedSuccess').hidden=true;el('guidedNavigation').hidden=false;el('guidedSteps').hidden=false;el('guidedExit').hidden=false;error();render();if(!dialog.open)dialog.showModal();
+  el('guidedSuccess').hidden=true;el('guidedNavigation').hidden=false;el('guidedSteps').hidden=false;el('guidedExit').hidden=false;error();render();if(!dialog.open){dialog.showModal();el('guidedTitle').focus({preventScroll:true});}
  }
  function fresh(){open({id:'c'+(Date.now()*1000+crypto.getRandomValues(new Uint16Array(1))[0]%1000),name:'',set:'',price:0,condition:'Near Mint',description:'',photos:[],photoRoles:[],thumb:'',catalogCardId:null,status:'draft',sold:false});}
  async function exit(){if(busy||publishing)return;if(editEntry){if((candidate||guidedSession.dirty)&&!confirm('Discard unsaved changes to this listing?'))return;generation++;releaseCandidate();dialog.close();guidedSession=null;return;}if(candidate&&scanEntry&&step===0)releaseCandidate();
@@ -111,7 +112,7 @@ function createGuidedSeller(options){
   finally{busy=false;lock();}
  };
  async function pick(file,role){
-  if(!file||busy||publishing)return;if(candidate?.attached){error(Error('Retry saving the current photo first.'));return;}releaseCandidate();busy=true;lock();error();const token=generation;
+  if(!file||busy||publishing)return;if(role==='detail'&&guidedSession.card.photos.length>=6){error(Error('Maximum 6 photos. Remove a photo first.'));return;}if(candidate?.attached){error(Error('Retry saving the current photo first.'));return;}releaseCandidate();busy=true;lock();error();const token=generation;
   try{const prepared=await prepareSellerPhoto(file,s=>el('guidedPhotoStatus').textContent=s);if(token!==generation)return;if(role==='front'&&scanEntry&&step!==5){identifiedCard=null;step=0;detailLayout(false);guidedSession.card.catalogCardId=null;guidedSession.card.name='';guidedSession.card.set='';el('guidedName').value='';el('guidedSet').value='';if(automaticDescription){guidedSession.card.description='';el('guidedDescription').value='';}}candidate={blob:prepared.blob,role,url:URL.createObjectURL(prepared.blob)};el('guidedCandidateImage').src=candidate.url;el('guidedCandidate').hidden=false;el('guidedUsePhoto').textContent=scanEntry&&step===0?'Quick Scan':'Use photo';el('guidedRetake').textContent=scanEntry&&step===0?'Retake Photo':'Choose another';render();el('guidedPhotoStatus').textContent='Check focus and glare before using this photo.';}
   catch(e){error(e);}finally{busy=false;render();}
  }
@@ -140,11 +141,10 @@ function createGuidedSeller(options){
    const c=guidedSession.card,p=candidate;
    if(!p.attached){
     const index=p.role==='detail'?-1:c.photoRoles.indexOf(p.role);
-    if(index<0&&c.photos.length>=20)throw Error('Maximum 20 photos. Remove a photo first.');
-    if(!await save())return;
+    if(index<0&&c.photos.length>=6)throw Error('Maximum 6 photos. Remove a photo first.');
     el('guidedPhotoStatus').textContent='Uploading photo…';
-    if(!p.upload)p.upload=await uploadPhoto(p.blob,()=>{});
-    if(index>=0){c.photos[index]=p.upload.url;c.photoRoles[index]=p.role;}else{c.photos.push(p.upload.url);c.photoRoles.push(p.role);}
+    if(!p.upload)p.upload=await uploadPhoto(p.blob,percent=>{el('guidedPhotoStatus').textContent=percent<99?'Uploading photo… '+percent+'%':'Finalizing photo…';});
+    if(index>=0){c.photos[index]=p.upload.url;c.photoRoles[index]=p.role;}else{c.photos.push(p.upload.url);c.photoRoles.push(c.photos.length===1?'front':p.role);}
     c.thumb=c.photos[0];p.attached=true;
    }
    if(!await save())return;
@@ -153,7 +153,7 @@ function createGuidedSeller(options){
   }catch(e){error(e);el('guidedPhotoStatus').textContent='Photo was not confirmed. Retry Use photo.';}
   finally{busy=false;lock();}
  }
- for(const [id,role] of [['guidedScanCamera','front'],['guidedCamera','front'],['guidedLibrary','front'],['guidedBackCamera','back'],['guidedBack','back'],['guidedDetail','detail']])el(id).onchange=e=>{const file=e.target.files?.[0];e.target.value='';pick(file,role);};
+ for(const [id,role] of [['guidedScanCamera','front'],['guidedCamera','front'],['guidedLibrary','front'],['guidedPhotoCamera','detail'],['guidedDetail','detail']])el(id).onchange=e=>{const file=e.target.files?.[0];e.target.value='';pick(file,role);};
  el('guidedCreateListing').onclick=async()=>{
   if(!identifiedCard||busy)return;
   const c=identifiedCard;Object.assign(guidedSession.card,{catalogCardId:c.id,name:c.name,set:c.set});el('guidedName').value=c.name;el('guidedSet').value=c.set;

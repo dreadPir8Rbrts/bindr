@@ -14,3 +14,23 @@ test('uploads get a ticket, post the thumbnail and photo to storage, then confir
  const result=await c.uploadSellerPhoto(photo,p=>progress.push(p));
  assert.deepEqual(api.map(a=>a.resource),['photos/uploads','photos/confirm']);assert.deepEqual(api[0].body,{contentType:'image/png',bytes:photo.size,thumbBytes:1});assert.deepEqual(api[1].body,{key:'dev/photos/k.jpg'});
  assert.deepEqual(posts.map(p=>p.fields.key),['dev/photos/k_thumb.jpg','dev/photos/k.jpg']);assert.equal(posts[1].file,photo);assert.equal(result.url,'https://s3.test/dev/photos/k.jpg');assert(progress.includes(50)&&progress.at(-1)===99);});
+
+test('photo and thumbnail transfer concurrently; confirmation waits for both',async()=>{
+ const c={};vm.createContext(c);vm.runInContext(readFileSync('frontend/photo-transfer.js','utf8'),c);
+ c.makeThumbnail=async()=>({size:10});const pending=[],calls=[];
+ c.postToStorage=target=>new Promise(resolve=>pending.push({target,resolve}));
+ const api=async resource=>{calls.push(resource);return {key:'photo',thumbUpload:'thumb',upload:'full'};};
+ const task=c.uploadSellerPhoto({type:'image/jpeg',size:100},()=>{},api);
+ await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(pending.map(p=>p.target),['thumb','full']);
+ pending[1].resolve();await new Promise(resolve=>setImmediate(resolve));assert.deepEqual(calls,['photos/uploads']);
+ pending[0].resolve();await task;assert.deepEqual(calls,['photos/uploads','photos/confirm']);
+});
+test('failed transfer waits for its sibling and never confirms an incomplete upload',async()=>{
+ const c={};vm.createContext(c);vm.runInContext(readFileSync('frontend/photo-transfer.js','utf8'),c);
+ c.makeThumbnail=async()=>({size:10});let finishPhoto,settled=false;const calls=[];
+ c.postToStorage=target=>target==='thumb'?Promise.reject(Error('Upload failed')):new Promise(resolve=>finishPhoto=resolve);
+ const task=c.uploadSellerPhoto({type:'image/jpeg',size:100},()=>{},async resource=>{calls.push(resource);return {key:'photo',thumbUpload:'thumb',upload:'full'};});
+ const checked=assert.rejects(task,/Upload failed/).then(()=>settled=true);
+ await new Promise(resolve=>setImmediate(resolve));assert.equal(settled,false);
+ finishPhoto();await checked;assert.deepEqual(calls,['photos/uploads']);
+});
